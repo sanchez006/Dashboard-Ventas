@@ -1,0 +1,11 @@
+<div class="grafica-clientes">
+	<h2>Clientes por Mes (desde Dic 2025)</h2>
+	<div *ngIf="loading">Cargando datos...</div>
+	<div *ngIf="error">{{ error }}</div>
+	<canvas *ngIf="!loading && !error" baseChart
+					[data]="chartData"
+				type="line"
+				[options]="chartOptions"
+				[plugins]="[DataLabelsPlugin]">
+	</canvas>
+</div>

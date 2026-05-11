@@ -1,0 +1,157 @@
+<div class="bono-container">
+  <h2 class="titulo">Bono Variable Mensual</h2>
+
+  <!-- Botón sincronización manual con Google Sheets -->
+  <div class="sync-bar">
+    <button class="btn-sync" (click)="sincronizar()" [disabled]="sincronizando">
+      <span *ngIf="!sincronizando">Sincronizar desde Google Sheets</span>
+      <span *ngIf="sincronizando">Sincronizando...</span>
+    </button>
+    <span *ngIf="mensajeSync" class="sync-msg">{{ mensajeSync }}</span>
+
+    <!-- Selector de mes -->
+    <select class="selector-mes" (change)="cambiarMes($any($event.target).value)">
+      <option *ngFor="let m of mesesDisponibles" [value]="m.valor" [selected]="m.valor === mesSeleccionado">
+        {{ m.etiqueta }}
+      </option>
+    </select>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando datos...</div>
+  <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+  <div *ngIf="!loading && !error && bono">
+
+    <!-- GRAFICAS PIE -->
+    <div class="graficas-pie">
+
+      <!-- Prospección -->
+      <div class="card-grafica">
+        <h3>Prospección <span class="pct-titulo">60%</span></h3>
+        <p class="meta-sub">Meta: {{ bono.prospeccion.meta }} prospectos</p>
+        <div class="ring-wrap">
+          <svg viewBox="0 0 100 100" class="ring-svg">
+            <circle class="ring-bg" cx="50" cy="50" r="42"/>
+            <circle class="ring-fill ring-red" cx="50" cy="50" r="42"
+              [style.stroke-dasharray]="264"
+              [style.stroke-dashoffset]="getRingOffset(bono.prospeccion.porcentaje)"/>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-pct">{{ bono.prospeccion.porcentaje }}%</span>
+            <span class="ring-label">completado</span>
+          </div>
+        </div>
+        <button class="btn-ver" (click)="verProspectos()">
+          {{ mostrarTablaProspectos ? 'Ocultar' : 'Ver prospectos' }}
+        </button>
+      </div>
+
+      <!-- Llamadas de Calidad -->
+      <div class="card-grafica">
+        <h3>Llamadas de Calidad <span class="pct-titulo">25%</span></h3>
+        <p class="meta-sub">Meta: {{ bono.llamadas.meta }} llamadas</p>
+        <div class="ring-wrap">
+          <svg viewBox="0 0 100 100" class="ring-svg">
+            <circle class="ring-bg" cx="50" cy="50" r="42"/>
+            <circle class="ring-fill ring-blue" cx="50" cy="50" r="42"
+              [style.stroke-dasharray]="264"
+              [style.stroke-dashoffset]="getRingOffset(bono.llamadas.porcentaje)"/>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-pct">{{ bono.llamadas.porcentaje }}%</span>
+            <span class="ring-label">completado</span>
+          </div>
+        </div>
+        <button class="btn-ver azul" (click)="verLlamadas()">
+          {{ mostrarTablaLlamadas ? 'Ocultar' : 'Ver llamadas' }}
+        </button>
+      </div>
+
+      <!-- RH y Otros -->
+      <div class="card-grafica">
+        <h3>RH y Otros <span class="pct-titulo">15%</span></h3>
+        <p class="meta-sub">Asignación administrativa</p>
+        <div class="ring-wrap">
+          <svg viewBox="0 0 100 100" class="ring-svg">
+            <circle class="ring-bg" cx="50" cy="50" r="42"/>
+            <circle class="ring-fill ring-green" cx="50" cy="50" r="42"
+              [style.stroke-dasharray]="264"
+              [style.stroke-dashoffset]="0"/>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-pct">100%</span>
+            <span class="ring-label">completado</span>
+          </div>
+        </div>
+        <button class="btn-ver verde" (click)="verRH()">
+          {{ mostrarTablaRH ? 'Ocultar' : 'Ver detalles' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Mensaje importación -->
+    <div *ngIf="mensajeImport" class="msg-import">{{ mensajeImport }}</div>
+
+    <!-- TABLA PROSPECTOS -->
+    <div *ngIf="mostrarTablaProspectos" class="tabla-prospectos">
+      <h3>Prospectos del Mes</h3>
+      <div *ngIf="prospectos.length === 0" class="sin-datos">No hay prospectos registrados este mes.</div>
+      <table *ngIf="prospectos.length > 0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre Cliente</th>
+            <th>Dirección</th>
+            <th>Mes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of prospectos; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ p.nombre_cliente }}</td>
+            <td>{{ p.direccion }}</td>
+            <td>{{ getMesNombre(p.mes) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TABLA LLAMADAS -->
+    <div *ngIf="mostrarTablaLlamadas" class="tabla-prospectos">
+      <h3>Llamadas de Calidad del Mes</h3>
+      <div *ngIf="llamadasList.length === 0" class="sin-datos">No hay llamadas registradas este mes.</div>
+      <table *ngIf="llamadasList.length > 0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre Cliente</th>
+            <th>Fecha Llamada</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of llamadasList; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ l.nombre_cliente }}</td>
+            <td>{{ l.fecha_llamada | date:'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TABLA RH -->
+    <div *ngIf="mostrarTablaRH" class="tabla-prospectos">
+      <h3>Asignación RH y Otros (15% fijo)</h3>
+      <div class="sin-datos">
+        <p>Este porcentaje es de carácter administrativo y no depende de métricas.</p>
+        <p><strong>Peso en el bono: 15%</strong></p>
+      </div>
+    </div>
+
+    <!-- BAR CHART VENTAS POR MES -->
+    <div class="card-bar">
+      <h3>Ventas por Mes (últimos meses)</h3>
+      <canvas baseChart type="bar" [data]="barVentas" [options]="barVentasOpts" [plugins]="[DataLabelsPlugin]"></canvas>
+    </div>
+
+  </div>
+</div>

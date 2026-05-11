@@ -1,0 +1,162 @@
+<div class="comisiones-container">
+  <div class="comisiones-header">
+    <div class="header-top">
+      <div>
+        <h1>{{ usuarioActual?.nombre }}</h1>
+        <p class="subtitle">Desglose de comisiones, bonos y descuentos - {{ obtenerMesActual() }}</p>
+      </div>
+      <div class="header-actions">
+        <select class="selector-mes-comisiones" (change)="cambiarMes($any($event.target).value)">
+          <option *ngFor="let m of mesesDisponibles" [value]="m.valor" [selected]="m.valor === mesSeleccionado">
+            {{ m.etiqueta }}
+          </option>
+        </select>
+        <button 
+          mat-icon-button 
+          (click)="actualizarDatos()"
+          [disabled]="actualizando"
+          [matTooltip]="'Actualizar: ' + obtenerUltimaActualizacion()">
+          <mat-icon [class.rotating]="actualizando">refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+    <p class="last-update" *ngIf="ultimaActualizacion">
+      Última actualización: {{ obtenerUltimaActualizacion() }}
+    </p>
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargando" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando comisiones...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !cargando" class="error-container">
+    <p class="error-message">{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="cargarDatos()">Reintentar</button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!cargando && !error" class="comisiones-content">
+    <div *ngIf="comisionMes">
+      
+      <!-- PROGRESO HACIA COMISIÓN (Circular) + Total Sales -->
+      <div class="progress-section">
+        <h2 class="progress-title">Progreso hacia Meta de Comisión</h2>
+        <div class="progress-grid">
+          <!-- Total Sales Card -->
+          <mat-card class="total-sales-card">
+            <div class="total-sales-content">
+              <div class="total-label">Facturación Total</div>
+              <div class="total-amount">
+                Q {{ comisionMes.facturacion_total | number: '1.2-2' }}
+              </div>
+              <div class="total-meta">{{ comisionMes.cantidad_clientes }} clientes</div>
+              <button mat-button class="view-chart-btn" (click)="irAlDashboard()">
+                <span>Ver detalle</span>
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          </mat-card>
+
+          <!-- Progress Circle -->
+          <mat-card class="progress-card">
+            <app-progress-circle 
+              [currentAmount]="comisionMes.facturacion_total"
+              [targetAmount]="4000">
+            </app-progress-circle>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- TARJETAS DE COMISIÓN, BONO Y DESCUENTOS -->
+      <div class="comisiones-grid">
+
+      <!-- Tarjeta 1: Comisión Base -->
+      <mat-card class="stat-card comision">
+        <div class="card-icon"></div>
+        <div class="card-content">
+          <div class="card-label">Comisión Base (75%)</div>
+          <div class="card-value">{{ formatearMoneda(comisionMes.monto_total_comisiones) }}</div>
+          <div class="card-meta">De clientes que pagaron</div>
+        </div>
+      </mat-card>
+
+      <!-- Tarjeta 2: Bono -->
+      <mat-card class="stat-card bono">
+        <div class="card-icon"></div>
+        <div class="card-content">
+          <div class="card-label">Bono por Facturación</div>
+          <div class="card-value">{{ formatearMoneda(comisionMes.monto_bono) }}</div>
+          <div class="card-meta" *ngIf="comisionMes.monto_bono > 0">
+            <span *ngIf="comisionMes.facturacion_total >= 7001">Rango: Q7,001+</span>
+            <span *ngIf="comisionMes.facturacion_total >= 5001 && comisionMes.facturacion_total < 7001">Rango: Q5,001-Q7,000</span>
+            <span *ngIf="comisionMes.facturacion_total >= 4501 && comisionMes.facturacion_total < 5001">Rango: Q4,501-Q5,000</span>
+            <span *ngIf="comisionMes.facturacion_total >= 4000 && comisionMes.facturacion_total < 4501">Sin bono</span>
+          </div>
+          <div class="card-meta" *ngIf="comisionMes.monto_bono === 0">Sin bono en este rango</div>
+        </div>
+      </mat-card>
+
+      <!-- Tarjeta 3: Descuentos por No Pago -->
+      <mat-card class="stat-card descuento">
+        <div class="card-icon"></div>
+        <div class="card-content">
+          <div class="card-label">Descuento por No Pago</div>
+          <div class="card-value">-{{ formatearMoneda(comisionMes.monto_penalizacion) }}</div>
+          <div class="card-meta">{{ comisionMes.clientes_no_pagan }} clientes sin pagar</div>
+        </div>
+      </mat-card>
+
+    </div>
+
+    <!-- Desglose Detallado -->
+    <mat-card class="desglose-card">
+      <mat-card-header>
+        <mat-card-title>Desglose Detallado</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="desglose-grid">
+          <div class="desglose-item">
+            <div class="desglose-label">Comisión Base</div>
+            <div class="desglose-value positive">{{ formatearMoneda(comisionMes.monto_total_comisiones) }}</div>
+          </div>
+          <div class="desglose-item">
+            <div class="desglose-label">+ Bono</div>
+            <div class="desglose-value positive">{{ formatearMoneda(comisionMes.monto_bono) }}</div>
+          </div>
+          <div class="desglose-item">
+            <div class="desglose-label">- Descuentos</div>
+            <div class="desglose-value negative">{{ formatearMoneda(comisionMes.monto_penalizacion) }}</div>
+          </div>
+          <div class="desglose-item total">
+            <div class="desglose-label">= TOTAL NETO</div>
+            <div class="desglose-value total-value">{{ formatearMoneda(comisionMes.monto_total_neto) }}</div>
+          </div>
+        </div>
+
+        <!-- Info adicional -->
+        <div *ngIf="comisionMes.aplica_comisiones === false" class="info-box warning">
+          <mat-icon>info</mat-icon>
+          <div>
+            <strong>Comisiones NO aplicables</strong>
+            <p>La facturación de Q{{ comisionMes.facturacion_total.toFixed(2) }} es menor a Q3,750. No se cobran comisiones este mes.</p>
+          </div>
+        </div>
+
+        <div *ngIf="comisionMes.clientes_no_pagan > 0" class="info-box danger">
+          <mat-icon>warning</mat-icon>
+          <div>
+            <strong>{{ comisionMes.clientes_no_pagan }} clientes sin pagar</strong>
+            <p>Estos clientes serán descontados de tu comisión si no pagan en el próximo mes.</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div *ngIf="!cargando && !error && !comisionMes" class="no-data">
+    <p>No hay datos de comisiones para este mes</p>
+  </div>
+</div>

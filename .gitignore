@@ -1,0 +1,45 @@
+# Ignore everything by default, then allow specific folders/files
+/*
+
+# Keep these repo files
+!/.gitignore
+!/README.md
+
+# Keep backend and frontend directories and their contents
+!/backend/
+!/backend/**
+!/frontend/
+!/frontend/**
+
+# Local editor and OS files (still ignored when outside allowed dirs)
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python caches and envs (also ensure root .py files are ignored)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Node artifacts
+node_modules/
+dist/
+build/
+
+# Misc
+*.log
+*.bak
+*.tmp
+.cache/
+
+# If you want to allow other top-level files add them explicitly with !/filename

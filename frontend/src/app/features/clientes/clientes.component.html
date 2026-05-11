@@ -1,0 +1,85 @@
+<div class="clientes-container">
+  <div class="clientes-header">
+    <h1>{{ usuarioActual?.nombre }} - Clientes Pendiente de Pago</h1>
+    <p class="subtitle">Solo clientes con estado "Pendiente de Pago" - Se actualiza cada 10 minutos</p>
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargando" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando clientes...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !cargando" class="error-container">
+    <p class="error-message"> {{ error }}</p>
+    <button mat-raised-button color="primary" (click)="cargarDatos()">Reintentar</button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!cargando && !error" class="clientes-content">
+    <mat-card class="card-clientes">
+      <mat-card-header>
+        <mat-card-title>Clientes Pendiente de Pago</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <!-- Resumen -->
+        <div *ngIf="obtenerClientesPendientes().length > 0" class="clientes-resumen">
+          <div class="resumen-stat">
+            <div class="label">Total Pendientes:</div>
+            <div class="value">{{ obtenerClientesPendientes().length }}</div>
+          </div>
+          <div class="resumen-stat">
+            <div class="label">Suma a Cobrar:</div>
+            <div class="value">{{ formatearMoneda(calcularSumaPendientes()) }}</div>
+          </div>
+          <div class="resumen-stat">
+            <div class="label">Última Actualización:</div>
+            <div class="value">Hace {{ (Date.now() - ultimaActualizacion.getTime()) / 1000 | number:'1.0-0' }}s</div>
+          </div>
+        </div>
+
+        <!-- Tabla -->
+        <div *ngIf="obtenerClientesPendientes().length > 0" class="clientes-table">
+          <table class="simple-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Código NET</th>
+                <th>Teléfono</th>
+                <th>Fecha Instalación</th>
+                <th>Plan</th>
+                <th>Precio</th>
+                <th>Estado Factura</th>
+                <th>Estado Servicio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cliente of obtenerClientesPendientes()">
+                <td class="cliente-nombre">{{ cliente.nombre_cliente }}</td>
+                <td class="codigo-net">{{ cliente.codigo_net || 'N/A' }}</td>
+                <td class="telefono">{{ cliente.telefono_contacto || 'N/A' }}</td>
+                <td class="fecha">{{ cliente.fecha_instalacion }}</td>
+                <td class="plan">{{ cliente.nombre_plan }}</td>
+                <td class="precio">{{ formatearMoneda(cliente.precio_plan) }}</td>
+                <td>
+                  <span class="estado-badge" [style.backgroundColor]="obtenerColorEstado(cliente.estado_factura)">
+                    {{ cliente.estado_factura }}
+                  </span>
+                </td>
+                <td>
+                  <span class="estado-badge" [style.backgroundColor]="obtenerColorEstadoServicio(cliente.estado)">
+                    {{ cliente.estado }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="obtenerClientesPendientes().length === 0 && !cargando" class="no-data">
+          <p>¡Excelente! No hay clientes pendiente de pago</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,248 @@
+.historico-container {
+  padding: 24px;
+  background: linear-gradient(135deg, #1B6B6B 0%, #2A7A7A 100%);
+  min-height: 100vh;
+}
+
+.historico-header {
+  margin-bottom: 32px;
+
+  h1 {
+    margin: 0;
+    color: white;
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    margin: 8px 0 0 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+  }
+}
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: rgba(27, 107, 107, 0.1);
+  border-radius: 8px;
+
+  p {
+    margin-top: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+  }
+}
+
+.error-container {
+  background: rgba(92, 90, 74, 0.2);
+  border: 1px solid rgba(255, 153, 153, 0.3);
+  border-radius: 8px;
+
+  .error-message {
+    color: #FF9999;
+    font-weight: 500;
+  }
+}
+
+.historico-content {
+  .card-grafico {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+
+    mat-card-header {
+      border-bottom: 2px solid #e0e0e0;
+      padding: 20px;
+
+      mat-card-title {
+        margin: 0;
+        font-size: 20px;
+        color: #333;
+      }
+    }
+
+    mat-card-content {
+      padding: 24px;
+    }
+  }
+
+  .card-resumen {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    mat-card-header {
+      border-bottom: 2px solid #e0e0e0;
+      padding: 20px;
+
+      mat-card-title {
+        margin: 0;
+        font-size: 20px;
+        color: #333;
+      }
+    }
+
+    mat-card-content {
+      padding: 24px;
+    }
+  }
+}
+
+.grafico-container {
+  position: relative;
+  width: 100%;
+  
+  .grafico-svg {
+    width: 100%;
+    height: auto;
+    min-height: 320px;
+  }
+}
+
+.resumen-table {
+  overflow-x: auto;
+
+  .simple-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 32px;
+
+    thead {
+      background-color: rgba(58, 74, 90, 0.8);
+      border-bottom: 2px solid rgba(92, 122, 92, 0.4);
+
+      th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: white;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: rgba(92, 122, 92, 0.2);
+        }
+
+        td {
+          padding: 14px 12px;
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.7);
+
+          &.mes {
+            font-weight: 500;
+            color: white;
+            text-transform: capitalize;
+          }
+
+          &.moneda {
+            font-family: 'Courier New', monospace;
+            text-align: right;
+            font-weight: 500;
+            color: #FFD700;
+          }
+
+          &.numero {
+            text-align: center;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+          }
+
+          &.neto {
+            background-color: rgba(92, 122, 92, 0.3);
+            font-weight: 600;
+            border-radius: 4px;
+            color: #FFD700;
+          }
+        }
+      }
+    }
+  }
+}
+
+.resumen-total {
+  background-color: #f0f7ff;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  padding: 20px;
+
+  h3 {
+    margin: 0 0 16px 0;
+    color: #1976d2;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .totales {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .total-stat {
+    background: white;
+    border-radius: 6px;
+    padding: 12px;
+    border-left: 4px solid #bbdefb;
+
+    &.total {
+      border-left-color: #4caf50;
+      background-color: #f1f8f6;
+
+      .label {
+        color: #2e7d32;
+        font-weight: 600;
+      }
+
+      .value {
+        color: #1b5e20;
+        font-size: 18px;
+        font-weight: 700;
+      }
+    }
+
+    .label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      font-family: 'Courier New', monospace;
+    }
+  }
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+
+  p {
+    margin: 8px 0;
+    font-size: 16px;
+
+    &.info {
+      font-size: 13px;
+      color: #bbb;
+    }
+  }
+}

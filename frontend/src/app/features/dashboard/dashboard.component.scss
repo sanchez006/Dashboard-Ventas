@@ -1,0 +1,341 @@
+.dashboard-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #0a1f1f;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  margin-bottom: 30px;
+
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+  }
+
+  .subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    margin: 5px 0 0 0;
+    font-size: 14px;
+  }
+
+  .selector-mes-dash {
+    padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    option { color: #333; background: white; }
+    &:focus { outline: none; border-color: white; }
+  }
+}
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+
+  p {
+    margin: 20px 0 0 0;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  button {
+    margin-top: 20px;
+  }
+}
+
+.error-message {
+  color: #FF9999;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+/* TARJETA PRINCIPAL */
+.card-principal {
+  background: linear-gradient(135deg, #1B6B6B 0%, #0F4A4A 100%);
+  color: white;
+
+  mat-card-header {
+    margin-bottom: 20px;
+
+    mat-card-title {
+      color: white;
+      font-size: 20px;
+    }
+  }
+
+  .comisiones-principal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+
+    .stat {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+
+      .stat-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 5px;
+      }
+
+      .stat-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+      }
+
+      &.total {
+        grid-column: span 2;
+        background: rgba(0, 0, 0, 0.2);
+
+        .stat-value-total {
+          font-size: 28px;
+          font-weight: bold;
+          color: #4caf50;
+        }
+      }
+    }
+
+    .stat-meta {
+      grid-column: span 2;
+      display: flex;
+      gap: 20px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.9);
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+      div {
+        flex: 1;
+      }
+    }
+  }
+}
+
+/* TARJETA RESUMEN 5 MESES */
+.card-resumen {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  mat-card-header {
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    mat-card-title {
+      color: white;
+    }
+  }
+
+  .resumen-table {
+    overflow-x: auto;
+  }
+}
+
+/* TARJETA CLIENTES */
+.card-clientes {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  mat-card-header {
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    mat-card-title {
+      color: white;
+    }
+  }
+
+  .clientes-resumen {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    border-left: 4px solid rgba(255, 255, 255, 0.2);
+
+    .resumen-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .label {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 600;
+      }
+
+      .value {
+        font-size: 18px;
+        font-weight: bold;
+        color: #FFD700;
+      }
+    }
+  }
+
+  .clientes-table {
+    overflow-x: auto;
+  }
+}
+
+/* TABLA SIMPLE */
+.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead {
+    background: rgba(255, 255, 255, 0.08);
+
+    th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: white;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      td {
+        padding: 12px;
+        color: rgba(255, 255, 255, 0.7);
+
+        &.monto-neto {
+          font-weight: 600;
+          color: #FFD700;
+        }
+
+        &.cliente-nombre {
+          font-weight: 500;
+          color: white;
+        }
+
+        &.codigo-net {
+          font-family: monospace;
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        &.fecha {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        &.precio {
+          font-weight: 600;
+          color: #FFD700;
+        }
+      }
+    }
+  }
+}
+
+/* ESTADO BADGE */
+.estado-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* SIN DATOS */
+.no-data {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .card-principal .comisiones-principal {
+    grid-template-columns: repeat(2, 1fr);
+
+    .stat.total {
+      grid-column: span 2;
+    }
+
+    .stat-meta {
+      grid-column: span 2;
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-container {
+    padding: 15px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 22px;
+  }
+
+  .card-principal .comisiones-principal {
+    grid-template-columns: 1fr;
+
+    .stat.total {
+      grid-column: span 1;
+    }
+
+    .stat-meta {
+      grid-column: span 1;
+    }
+  }
+
+  .simple-table {
+    font-size: 12px;
+
+    thead th,
+    tbody td {
+      padding: 8px;
+    }
+  }
+}

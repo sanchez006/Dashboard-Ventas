@@ -1,0 +1,82 @@
+<div class="login-wrapper">
+  <div class="login-container">
+    <!-- Sección de Bienvenida (Izquierda) -->
+    <div class="welcome-section">
+      <div class="welcome-content">
+        <h2 class="welcome-title">Bienvenido</h2>
+        <p class="welcome-subtitle">...</p>
+      </div>
+    </div>
+
+    <!-- Sección de Formulario (Derecha) -->
+    <div class="form-section">
+      <!-- Mostrar error si existe -->
+      <div *ngIf="error" class="error-message">
+        <strong>Error:</strong> {{ error }}
+      </div>
+
+      <!-- Formulario -->
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+        <!-- Usuario -->
+        <div class="form-group">
+          <label class="form-label">Usuario</label>
+          <input
+            type="text"
+            class="form-input"
+            formControlName="username"
+            placeholder="escribe tu usuario"
+            [disabled]="cargando"
+          />
+          <span *ngIf="username?.hasError('required') && username?.touched" class="error-text">
+            El usuario es requerido
+          </span>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input
+            type="password"
+            class="form-input"
+            formControlName="password"
+            placeholder="escribe tu contraseña"
+            [disabled]="cargando"
+          />
+          <span *ngIf="password?.hasError('required') && password?.touched" class="error-text">
+            La contraseña es requerida
+          </span>
+          <span *ngIf="password?.hasError('minlength') && password?.touched" class="error-text">
+            Mínimo 6 caracteres
+          </span>
+        </div>
+
+        <!-- Remember Me -->
+        <div class="form-group checkbox-group">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            formControlName="rememberMe"
+            class="form-checkbox"
+            [disabled]="cargando"
+          />
+          <label for="rememberMe" class="checkbox-label">Recuérdame</label>
+        </div>
+
+        <!-- Botón de envío -->
+        <button
+          type="submit"
+          class="login-button"
+          [disabled]="cargando || loginForm.invalid"
+        >
+          <mat-spinner
+            *ngIf="cargando"
+            diameter="18"
+            class="spinner"
+          ></mat-spinner>
+          {{ cargando ? 'Ingresando...' : 'INGRESAR' }}
+        </button>
+      </form>
+
+    </div>
+  </div>
+</div>

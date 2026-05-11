@@ -1,0 +1,83 @@
+<div class="incumplimientos-container">
+  <!-- TITULO -->
+  <div class="header">
+    <h1>Clientes con Incumplimientos</h1>
+    <p class="subtitle">Clientes que no han pagado sus facturas</p>
+  </div>
+
+  <!-- INDICADORES -->
+  <div class="indicadores-section">
+    <div class="indicador-card" *ngIf="!cargando">
+      <div class="indicador-icon"></div>
+      <div class="indicador-content">
+        <div class="indicador-label">Total de Clientes Incumplidos</div>
+        <div class="indicador-value">{{ totalIncumplimientos }}</div>
+      </div>
+    </div>
+
+    <div class="indicador-card" *ngIf="!cargando">
+      <div class="indicador-icon"></div>
+      <div class="indicador-content">
+        <div class="indicador-label">Penalizaciones Totales</div>
+        <div class="indicador-value">Q {{ sumaPenalizaciones.toFixed(2) }}</div>
+      </div>
+    </div>
+
+    <div class="indicador-card" *ngIf="!cargando">
+      <div class="indicador-icon"></div>
+      <div class="indicador-content">
+        <div class="indicador-label">Monto en Planes</div>
+        <div class="indicador-value">Q {{ sumaPreciosPlan.toFixed(2) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARGANDO -->
+  <div class="cargando-section" *ngIf="cargando">
+    <div class="spinner"></div>
+    <p>Cargando datos de incumplimientos...</p>
+  </div>
+
+  <!-- TABLA DE INCUMPLIMIENTOS -->
+  <div class="tabla-section" *ngIf="!cargando && mostrarTabla">
+    <div class="tabla-card">
+      <div class="tabla-header">
+        <h3>Detalle de Incumplimientos</h3>
+      </div>
+      <div class="table-wrapper">
+        <table class="incumplimientos-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Veces sin Pagar</th>
+              <th>Precio del Plan</th>
+              <th>Comisión Retenida</th>
+              <th>Vencimiento de Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let inc of incumplimientos" class="table-row">
+              <td class="cell-cliente">{{ inc.nombre_cliente }}</td>
+              <td class="cell-contador">
+                <span class="contador-badge">{{ inc.contador_incumplimientos }}</span>
+              </td>
+              <td class="cell-precio">Q {{ parseFloat(inc.precio_plan).toFixed(2) }}</td>
+              <td class="cell-comision">-Q {{ parseFloat(inc.comision_retenida).toFixed(2) }}</td>
+              <td class="cell-fecha">{{ formatearFecha(inc.fecha_vencimiento_pago) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIN INCUMPLIMIENTOS -->
+  <div class="sin-datos-section" *ngIf="!cargando && !mostrarTabla">
+    <div class="sin-datos-card">
+      <div class="sin-datos-icon">...</div>
+      <h3>¡Excelente!</h3>
+      <p>No hay clientes con pagos pendientes en este momento.</p>
+    </div>
+  </div>
+</div>
+

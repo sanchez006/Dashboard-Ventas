@@ -1,0 +1,170 @@
+<div class="historico-container">
+  <div class="historico-header">
+    <h1>📈 {{ usuarioActual?.nombre }} - Últimos 5 Meses</h1>
+    <p class="subtitle">Resumen histórico de comisiones (sin incluir mes actual)</p>
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargando" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando datos históricos...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !cargando" class="error-container">
+    <p class="error-message">❌ {{ error }}</p>
+    <button mat-raised-button color="primary" (click)="cargarDatos()">Reintentar</button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!cargando && !error" class="historico-content">
+    
+    <!-- GRÁFICO DE VENTAS -->
+    <mat-card class="card-grafico">
+      <mat-card-header>
+        <mat-card-title>Cantidad de Clientes Instalados por Mes (Últimos 5 Meses)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="grafico-container" *ngIf="graficoDatos.length > 0">
+          <svg viewBox="0 0 600 300" preserveAspectRatio="xMidYMid meet" class="grafico-linea">
+            <!-- Fondo -->
+            <rect width="600" height="300" fill="#f5f5f5"/>
+            
+            <!-- Área del gráfico -->
+            <rect x="40" y="40" width="520" height="220" fill="white" stroke="#ddd" stroke-width="1"/>
+            
+            <!-- Líneas de rejilla horizontal -->
+            <g class="grid" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2">
+              <line x1="40" y1="260" x2="560" y2="260" />
+              <line x1="40" y1="200" x2="560" y2="200" />
+              <line x1="40" y1="140" x2="560" y2="140" />
+              <line x1="40" y1="80" x2="560" y2="80" />
+            </g>
+
+            <!-- Línea de datos (se dibuja con polyline conectando todos los puntos) -->
+            <polyline 
+              [attr.points]="generarPuntosLinea()"
+              fill="none" 
+              stroke="#1B6B6B" 
+              stroke-width="3" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"/>
+
+            <!-- Área bajo la línea (relleno transparente) -->
+            <polygon 
+              [attr.points]="generarAreaBajoLinea()"
+              fill="#1B6B6B" 
+              opacity="0.1"/>
+
+            <!-- Puntos circulares en cada dato -->
+            <g class="data-points">
+              <ng-container *ngFor="let valor of graficoDatos; let i = index">
+                <ng-container *ngLet="getPosicionPunto(i) as pos">
+                  <!-- Punto -->
+                  <circle [attr.cx]="pos.x" [attr.cy]="pos.y" r="5" fill="#1B6B6B" stroke="white" stroke-width="2"/>
+                  
+                  <!-- Valor encima -->
+                  <text [attr.x]="pos.x" [attr.y]="pos.y - 15" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B6B6B">
+                    {{ valor }}
+                  </text>
+                </ng-container>
+              </ng-container>
+            </g>
+
+            <!-- Etiquetas del eje X (meses) -->
+            <g class="x-labels" font-size="11" fill="#666">
+              <ng-container *ngFor="let mes of graficoMeses; let i = index">
+                <ng-container *ngLet="getPosicionPunto(i) as pos">
+                  <text [attr.x]="pos.x" [attr.y]="285" text-anchor="middle">{{ mes }}</text>
+                </ng-container>
+              </ng-container>
+            </g>
+
+            <!-- Etiquetas del eje Y -->
+            <g class="y-labels" font-size="10" fill="#999" text-anchor="end">
+              <text x="35" y="265" text-anchor="middle">0</text>
+              <text x="35" y="205" text-anchor="middle">{{ (maxValor / 4).toFixed(0) }}</text>
+              <text x="35" y="145" text-anchor="middle">{{ (maxValor / 2).toFixed(0) }}</text>
+              <text x="35" y="85" text-anchor="middle">{{ (maxValor * 0.75).toFixed(0) }}</text>
+              <text x="35" y="45" text-anchor="middle">{{ maxValor }}</text>
+            </g>
+
+            <!-- Eje Y label -->
+            <text x="10" y="150" font-size="11" fill="#666" font-weight="500" text-anchor="middle" transform="rotate(-90 10 150)">
+              Clientes Instalados
+            </text>
+          </svg>
+        </div>
+
+        <div *ngIf="graficoDatos.length === 0" class="sin-datos">
+          <p>⚠️ No hay datos para mostrar en el gráfico</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="card-resumen">
+      <mat-card-header>
+        <mat-card-title>Comisiones de los Últimos 5 Meses</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="resumen5Meses.length > 0" class="resumen-table">
+          <table class="simple-table">
+            <thead>
+              <tr>
+                <th>Mes</th>
+                <th>Facturación</th>
+                <th>Clientes</th>
+                <th>Comisión Base</th>
+                <th>Bono</th>
+                <th>Penalización</th>
+                <th>Total Neto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let mes of resumen5Meses">
+                <td class="mes">{{ mes.mes | date: 'MMMM yyyy' }}</td>
+                <td class="moneda">{{ formatearMoneda(mes.facturacion_total) }}</td>
+                <td class="numero">{{ mes.cantidad_clientes }}</td>
+                <td class="moneda" [style.color]="'#4caf50'">{{ formatearMoneda(mes.monto_total_comisiones) }}</td>
+                <td class="moneda" [style.color]="'#2196f3'">{{ formatearMoneda(mes.monto_bono) }}</td>
+                <td class="moneda" [style.color]="'#f44336'">-{{ formatearMoneda(mes.monto_penalizacion) }}</td>
+                <td class="moneda neto">{{ formatearMoneda(mes.monto_total_neto) }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Resumen total -->
+          <div class="resumen-total">
+            <h3>Resumen Total</h3>
+            <div class="totales">
+              <div class="total-stat">
+                <div class="label">Facturación Total:</div>
+                <div class="value">{{ formatearMoneda(calcularTotalFacturacion()) }}</div>
+              </div>
+              <div class="total-stat">
+                <div class="label">Comisiones Base:</div>
+                <div class="value" style="color: #4caf50">{{ formatearMoneda(calcularTotalComisiones()) }}</div>
+              </div>
+              <div class="total-stat">
+                <div class="label">Bonos:</div>
+                <div class="value" style="color: #2196f3">{{ formatearMoneda(calcularTotalBonos()) }}</div>
+              </div>
+              <div class="total-stat">
+                <div class="label">Penalizaciones:</div>
+                <div class="value" style="color: #f44336">-{{ formatearMoneda(calcularTotalPenalizaciones()) }}</div>
+              </div>
+              <div class="total-stat total">
+                <div class="label">Total Neto 5 Meses:</div>
+                <div class="value">{{ formatearMoneda(calcularTotalNeto()) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="resumen5Meses.length === 0" class="no-data">
+          <p>⚠️ No hay datos de los últimos 5 meses</p>
+          <p class="info">Esto es normal si es el primer mes. Los datos aparecerán conforme pasen los meses.</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
