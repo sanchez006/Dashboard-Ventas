@@ -6,6 +6,14 @@ export class BonoService {
   // PROSPECTOS
   // ===============================
 
+  // Normalizar teléfono: remover espacios, +502, mantener solo 8 dígitos
+  private static normalizarTelefono(telefonoRaw: string): string {
+    if (!telefonoRaw) return '';
+    const limpio = telefonoRaw.replace(/\s+/g, '').replace(/^\+502/, '').trim();
+    const soloDigitos = limpio.replace(/\D/g, '');
+    return soloDigitos.slice(-8);
+  }
+
   // Importar prospectos desde Excel (array de rows ya parseados)
   static async importarProspectos(idAsesor: number, nombreAsesor: string, rows: any[]) {
     const mes = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
@@ -15,15 +23,17 @@ export class BonoService {
     for (const row of rows) {
       const nombreCliente = row['nombre_cliente'] || row['Nombre Cliente'] || row['nombre'] || row['Nombre'] || '';
       const direccion = row['direccion'] || row['Dirección'] || row['direccion'] || row['Direccion'] || '';
+      const telefonoRaw = row['telefono'] || row['Telefono'] || row['teléfono'] || row['Teléfono'] || row['numero_telefono'] || row['Numero Telefono'] || '';
       const fechaStr = row['fecha_registro'] || row['Fecha Registro'] || row['fecha'] || row['Fecha'] || new Date().toISOString().slice(0, 10);
       if (!nombreCliente) continue;
 
       const fecha = fechaStr instanceof Date ? fechaStr.toISOString().slice(0, 10) : fechaStr;
+      const telefono = this.normalizarTelefono(telefonoRaw);
 
       await db.none(
-        `INSERT INTO prospectos (id_asesor, nombre_asesor, nombre_cliente, direccion, fecha_registro, mes)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [idAsesor, nombreAsesor, nombreCliente, direccion, fecha, mes]
+        `INSERT INTO prospectos (id_asesor, nombre_asesor, nombre_cliente, direccion, telefono, fecha_registro, mes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [idAsesor, nombreAsesor, nombreCliente, direccion, telefono, fecha, mes]
       );
     }
     return { importados: rows.length };
@@ -33,7 +43,7 @@ export class BonoService {
   static async obtenerProspectos(idAsesor: number, mes?: string) {
     const mesActual = mes || new Date().toISOString().slice(0, 7);
     return await db.query(
-      `SELECT id, nombre_cliente, direccion, nombre_asesor, fecha_registro, mes
+      `SELECT id, nombre_cliente, direccion, telefono, nombre_asesor, fecha_registro, mes
        FROM prospectos
        WHERE id_asesor = $1 AND mes = $2
        ORDER BY fecha_registro DESC`,

@@ -95,8 +95,12 @@
 
   .progress-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
+    }
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
@@ -511,5 +515,151 @@
 
   p {
     font-size: 16px;
+  }
+}
+
+// ESTILOS PARA GRÁFICO DE ANILLOS CONCÉNTRICOS
+.anillos-concentricos {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px !important;
+  background: linear-gradient(135deg, #3A5A5A 0%, #2A4A5A 100%) !important;
+
+  .anillos-header {
+    text-align: center;
+    margin-bottom: 20px;
+    width: 100%;
+
+    h3 {
+      margin: 0 0 4px 0;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .anillos-description {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      font-weight: 400;
+    }
+  }
+
+  .anillos-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+
+    .anillos-svg {
+      width: 100%;
+      height: auto;
+
+      .anillo-bg {
+        fill: none;
+      }
+
+      .anillo-fill {
+        fill: none;
+        stroke-width: 14;
+        stroke-linecap: round;
+        stroke-dasharray: 100%;
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 0.8s ease-in-out;
+        transform-origin: 120px 120px;
+        transform: rotate(-90deg);
+
+        &.anillo-kpi {
+          stroke: #4caf50; // Verde
+          stroke-dasharray: 282.74;
+        }
+
+        &.anillo-facturacion {
+          stroke: #ff5252; // Rojo
+          stroke-dasharray: 471.24;
+        }
+
+        &.anillo-global {
+          stroke: #64b5f6; // Azul
+          stroke-dasharray: 659.73;
+        }
+      }
+    }
+
+    .anillos-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      .center-number {
+        font-size: 42px;
+        font-weight: 700;
+        color: white;
+        font-family: 'Courier New', monospace;
+        line-height: 1;
+      }
+
+      .center-label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 4px;
+        font-weight: 500;
+      }
+    }
+
+    .anillos-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.9);
+
+        .legend-color {
+          width: 14px;
+          height: 14px;
+          border-radius: 3px;
+
+          &.kpi {
+            background: #4caf50;
+          }
+
+          &.facturacion {
+            background: #ff5252;
+          }
+
+          &.global {
+            background: #64b5f6;
+          }
+        }
+
+        .legend-text {
+          font-weight: 500;
+        }
+      }
+    }
   }
 }

@@ -14,6 +14,7 @@ interface Incumplimiento {
   contador_incumplimientos: number;
   precio_plan: string;
   comision_retenida: string;
+  meses_sin_pagar: string[]; // Array de meses: ["Abril 2026", "Junio 2026"]
   created_at: string;
 }
 

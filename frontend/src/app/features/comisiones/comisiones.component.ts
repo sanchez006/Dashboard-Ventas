@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ComisionesService } from '../../core/services/comisiones.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiService } from '../../core/services/api.service';
 import { ProgressCircleComponent } from '../../shared/components/progress-circle/progress-circle.component';
 import { interval, Subscription } from 'rxjs';
 
@@ -46,9 +47,16 @@ export class ComisionesComponent implements OnInit, OnDestroy {
   // Control de confeti
   yaMostroConfeti = false;
 
+  // KPIs Ponderados
+  bonoData: any = null;
+  porcentajePonderado = 0;
+  porcentajeFacturacion = 0;
+  porcentajeGlobal = 0;
+
   constructor(
     private comisionesService: ComisionesService,
     private authService: AuthService,
+    private apiService: ApiService,
     private router: Router
   ) {}
 
@@ -95,18 +103,28 @@ export class ComisionesComponent implements OnInit, OnDestroy {
     this.cargando = true;
     this.error = null;
 
-    console.log(`🔄 Recalculando comisiones para ${this.mesSeleccionado}...`);
+    console.log('Recalculando comisiones para ' + this.mesSeleccionado + '...');
 
     // Primero recalcular el mes seleccionado
     this.comisionesService.recalcularMes(this.mesSeleccionado).toPromise()
       .then((response) => {
         console.log('✅ Comisiones recalculadas:', response);
-        // Ahora cargar los datos actualizados
-        return this.comisionesService.obtenerMisComisiones(this.mesSeleccionado).toPromise();
+        // Ahora cargar comisiones Y bono en paralelo
+        return Promise.all([
+          this.comisionesService.obtenerMisComisiones(this.mesSeleccionado).toPromise(),
+          this.apiService.getBonoTotal(this.authService.getIdAsesor()!, this.mesSeleccionado).toPromise()
+        ]);
       })
-      .then((comisiones) => {
+      .then(([comisiones, bono]) => {
         console.log('✅ Comisiones actualizadas:', comisiones);
+        console.log('Bono actualizado:', bono);
+        
         this.comisionMes = comisiones?.data?.[0] || null;
+        this.bonoData = bono?.data;
+        
+        if (this.bonoData) {
+          this.calcularPorcentajePonderado();
+        }
         
         if (this.comisionMes) {
           this.comisionMes.facturacion_total = parseFloat(this.comisionMes.facturacion_total);
@@ -114,9 +132,17 @@ export class ComisionesComponent implements OnInit, OnDestroy {
           this.comisionMes.monto_bono = parseFloat(this.comisionMes.monto_bono);
           this.comisionMes.monto_penalizacion = parseFloat(this.comisionMes.monto_penalizacion);
           this.comisionMes.monto_total_neto = parseFloat(this.comisionMes.monto_total_neto);
+
+          // Calcular % de facturación hacia meta (Q4,000)
+          const porcentajeReal = (this.comisionMes.facturacion_total / 4000) * 100;
+          this.porcentajeFacturacion = Math.min(Math.round(porcentajeReal), 100);
+          
+          // Calcular % global = promedio de facturación y KPIs (50% cada uno)
+          this.porcentajeGlobal = Math.round((this.porcentajeFacturacion * 0.5) + (this.porcentajePonderado * 0.5));
+          
+          console.log(`📊 Facturación: ${this.porcentajeFacturacion}%, KPIs: ${this.porcentajePonderado}%, Global: ${this.porcentajeGlobal}%`);
           
           // Verificar meta después de actualizar
-          const porcentajeReal = (this.comisionMes.facturacion_total / 4000) * 100;
           if (porcentajeReal >= 100 && !this.yaMostroConfeti) {
             console.log('🎉 ¡100% de meta alcanzado en recalculo!');
             this.dispararConfeti();
@@ -140,7 +166,7 @@ export class ComisionesComponent implements OnInit, OnDestroy {
   iniciarAutoRefresh(): void {
     // 10 minutos = 600000 ms
     this.autoRefreshSubscription = interval(600000).subscribe(() => {
-      console.log('🔄 Auto-refresh: Actualizando comisiones...');
+      console.log('Auto-refresh: Actualizando comisiones...');
       this.actualizarDatos();
     });
   }
@@ -153,7 +179,7 @@ export class ComisionesComponent implements OnInit, OnDestroy {
     this.cargando = true;
     this.error = null;
 
-    console.log('🔄 Recalculando comisiones...');
+    console.log('Recalculando comisiones...');
 
     // Primero recalcular comisiones, luego cargar datos
     this.comisionesService.recalcularAbril2026().toPromise()
@@ -199,14 +225,25 @@ export class ComisionesComponent implements OnInit, OnDestroy {
     this.cargando = true;
     this.error = null;
 
-    console.log('🔄 Cargando comisiones del mes...');
+    console.log('Cargando comisiones del mes...');
 
-    this.comisionesService.obtenerMisComisiones(this.mesSeleccionado).toPromise()
-      .then((comisiones) => {
-        console.log('✅ Comisiones cargadas:', comisiones);
+    // Cargar comisiones Y bono total en paralelo
+    Promise.all([
+      this.comisionesService.obtenerMisComisiones(this.mesSeleccionado).toPromise(),
+      this.apiService.getBonoTotal(this.authService.getIdAsesor()!, this.mesSeleccionado).toPromise()
+    ])
+      .then(([comisiones, bono]) => {
+        console.log('Comisiones cargadas:', comisiones);
+        console.log('Bono cargado:', bono);
 
         // Obtener la comisión del mes actual (primer elemento)
         this.comisionMes = comisiones?.data?.[0] || null;
+        
+        // Guardar bono y calcular ponderado
+        this.bonoData = bono?.data;
+        if (this.bonoData) {
+          this.calcularPorcentajePonderado();
+        }
         
         if (this.comisionMes) {
           this.comisionMes.facturacion_total = parseFloat(this.comisionMes.facturacion_total);
@@ -215,17 +252,16 @@ export class ComisionesComponent implements OnInit, OnDestroy {
           this.comisionMes.monto_penalizacion = parseFloat(this.comisionMes.monto_penalizacion);
           this.comisionMes.monto_total_neto = parseFloat(this.comisionMes.monto_total_neto);
 
-          // Verificar si alcanzó el 100% de meta (Q4,000)
-          // Calcular porcentaje sin límite primero
+          // Calcular % de facturación hacia meta (Q4,000)
           const porcentajeReal = (this.comisionMes.facturacion_total / 4000) * 100;
-          const porcentajeDisplay = Math.min(
-            Math.round(porcentajeReal),
-            100
-          );
+          this.porcentajeFacturacion = Math.min(Math.round(porcentajeReal), 100);
+          
+          // Calcular % global = promedio de facturación y KPIs (50% cada uno)
+          this.porcentajeGlobal = Math.round((this.porcentajeFacturacion * 0.5) + (this.porcentajePonderado * 0.5));
+          
+          console.log(`📊 Facturación: ${this.porcentajeFacturacion}%, KPIs: ${this.porcentajePonderado}%, Global: ${this.porcentajeGlobal}%`);
 
-          console.log(`📊 Facturación: Q${this.comisionMes.facturacion_total}, Porcentaje: ${porcentajeReal.toFixed(2)}%, yaMostroConfeti: ${this.yaMostroConfeti}`);
-
-          // Si alcanzó o superó el 100% de meta y aún no ha mostrado confeti, dispara confeti
+          // Verificar si alcanzó el 100% de meta (Q4,000)
           if (porcentajeReal >= 100 && !this.yaMostroConfeti) {
             console.log('🎉 ¡100% de meta alcanzado! Disparando confeti...');
             this.dispararConfeti();
@@ -233,7 +269,7 @@ export class ComisionesComponent implements OnInit, OnDestroy {
           } else if (porcentajeReal < 100) {
             console.log('⏳ Aún no alcanza 100% de meta');
           } else if (this.yaMostroConfeti) {
-            console.log('✅ Confeti ya fue mostrado en esta sesión');
+            console.log('Confeti ya fue mostrado en esta sesión');
           }
         }
 
@@ -248,20 +284,37 @@ export class ComisionesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Disparar confeti de celebración - Usa canvas-confetti librería profesional
+   * Calcular porcentaje ponderado de KPIs
+   * Fórmula: (Prospección% × 0.60) + (Llamadas% × 0.25) + (RH% × 0.15)
+   */
+  calcularPorcentajePonderado(): void {
+    if (!this.bonoData) return;
+    
+    const prospeccionAporte = (this.bonoData.prospeccion?.porcentaje || 0) * 0.60;
+    const llamadasAporte = (this.bonoData.llamadas?.porcentaje || 0) * 0.25;
+    const rhAporte = (this.bonoData.rh?.porcentaje || 0) * 0.15;
+    
+    this.porcentajePonderado = Math.round((prospeccionAporte + llamadasAporte + rhAporte) * 100) / 100;
+    
+    console.log('Ponderado: ' + this.porcentajePonderado + '%');
+    console.log('- Prospeccion (60%): ' + prospeccionAporte.toFixed(2) + '%');
+    console.log('- Llamadas (25%): ' + llamadasAporte.toFixed(2) + '%');
+    console.log('- RH (15%): ' + rhAporte.toFixed(2) + '%');
+  }
+
+  /**
+   * Disparar confeti de celebración
    */
   dispararConfeti(): void {
-    console.log('🚀 Iniciando dispararConfeti()...');
+    console.log('Iniciando dispararConfeti...');
     
-    // Verificar si canvas-confetti ya está cargada
     if ((window as any).confetti) {
-      console.log('📦 canvas-confetti encontrada en window, usando...');
+      console.log('canvas-confetti cargada, usando...');
       this.crearExplosionesConCanvasConfetti();
       return;
     }
 
-    console.log('📥 Intentando cargar canvas-confetti desde CDN...');
-    // Cargar desde CDN más confiable (jsDelivr)
+    // Cargar desde CDN
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.0/dist/confetti.browser.umd.production.min.js';
     script.type = 'text/javascript';
@@ -269,26 +322,23 @@ export class ComisionesComponent implements OnInit, OnDestroy {
     script.crossOrigin = 'anonymous';
     
     script.onload = () => {
-      console.log('✅ canvas-confetti cargado exitosamente');
+      console.log('canvas-confetti cargado exitosamente');
       this.crearExplosionesConCanvasConfetti();
     };
     
     script.onerror = () => {
-      console.warn('❌ No se pudo cargar canvas-confetti, usando fallback CSS');
+      console.warn('No se pudo cargar canvas-confetti, usando fallback CSS');
       this.crearExplosionesCSS();
     };
     
     script.onabort = () => {
-      console.warn('⚠️ Carga de canvas-confetti abortada, usando fallback CSS');
+      console.warn('Carga de canvas-confetti abortada, usando fallback CSS');
       this.crearExplosionesCSS();
     };
     
     document.head.appendChild(script);
   }
 
-  /**
-   * Crear explosiones con canvas-confetti (librería profesional)
-   */
   private crearExplosionesConCanvasConfetti(): void {
     const confetti = (window as any).confetti;
     if (!confetti) {
@@ -296,7 +346,6 @@ export class ComisionesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // 5 explosiones en diferentes puntos
     for (let i = 0; i < 5; i++) {
       setTimeout(() => {
         const x = Math.random();
@@ -317,22 +366,16 @@ export class ComisionesComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Fallback: Explosiones con CSS (sin librería externa)
-   */
   private crearExplosionesCSS(): void {
-    console.log('💥 Creando 5 explosiones de confeti con CSS fallback...');
+    console.log('Creando explosiones de confeti con CSS fallback...');
     for (let i = 0; i < 5; i++) {
       setTimeout(() => {
-        console.log(`  → Explosión ${i + 1}/5`);
+        console.log('Explosion ' + (i + 1) + '/5');
         this.crearExplosion();
       }, i * 350);
     }
   }
 
-  /**
-   * Crear una explosión de confeti (fallback CSS optimizado)
-   */
   private crearExplosion(): void {
     const x = Math.random() * 100;
     const y = Math.random() * 50;
@@ -347,7 +390,7 @@ export class ComisionesComponent implements OnInit, OnDestroy {
       const velocity = 5 + Math.random() * 8;
       const vx = Math.cos(angle) * velocity;
       const vy = Math.sin(angle) * velocity;
-      const duration = 1.8 + Math.random() * 0.8; // 1.8-2.6 segundos
+      const duration = 1.8 + Math.random() * 0.8;
       
       particle.style.position = 'fixed';
       particle.style.left = x + '%';
@@ -363,9 +406,9 @@ export class ComisionesComponent implements OnInit, OnDestroy {
       const translateX = vx * 100;
       const translateY = vy * 100 + 150;
       
-      particle.style.animation = `confetti-burst ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`;
-      particle.style.setProperty('--tx', `${translateX}px`);
-      particle.style.setProperty('--ty', `${translateY}px`);
+      particle.style.animation = 'confetti-burst ' + duration + 's cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards';
+      particle.style.setProperty('--tx', translateX + 'px');
+      particle.style.setProperty('--ty', translateY + 'px');
       
       document.body.appendChild(particle);
       

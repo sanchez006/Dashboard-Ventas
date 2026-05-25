@@ -22,7 +22,21 @@ export interface ComisionMes {
   monto_total_neto: number;
 }
 
+const MESES_NOMBRES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
 class ComisionService {
+  /**
+   * Obtener el nombre del mes en español
+   */
+  private getNombreMes(fecha: Date): string {
+    const mes = MESES_NOMBRES[fecha.getMonth()];
+    const año = fecha.getFullYear();
+    return `${mes} ${año}`;
+  }
+
   /**
    * Obtener todos los clientes de un vendedor en un mes específico (mes actual)
    */
@@ -30,6 +44,8 @@ class ComisionService {
     idAsesor: number,
     mes: Date
   ): Promise<ClienteComision[]> {
+    console.log(`🔎 Buscando clientes: idAsesor=${idAsesor}, mes=${mes.toISOString()}, year=${mes.getFullYear()}, month=${mes.getMonth()+1}`);
+    
     const query = `
       SELECT 
         id_servicio,
@@ -45,10 +61,12 @@ class ComisionService {
       WHERE id_asesor = $1
       AND EXTRACT(YEAR FROM fecha_instalacion) = EXTRACT(YEAR FROM $2::timestamp)
       AND EXTRACT(MONTH FROM fecha_instalacion) = EXTRACT(MONTH FROM $2::timestamp)
+      AND estado != 'Cancelado'
       ORDER BY fecha_instalacion ASC
     `;
 
     const result = await db.query(query, [idAsesor, mes]);
+    console.log(`✅ Clientes encontrados: ${result.length}`);
     return result;
   }
 
@@ -145,30 +163,31 @@ class ComisionService {
   ): Promise<ComisionMes> {
     // 1. Obtener todos los clientes del vendedor (ORDENADOS por fecha instalación)
     const clientes = await this.obtenerClientesDelVendedor(idAsesor, mes);
+    
+    console.log(`📋 Asesor ${idAsesor} (${nombreAsesor}) - Mes ${mes.getFullYear()}-${String(mes.getMonth()+1).padStart(2,'0')}: ${clientes.length} clientes encontrados`);
 
-    // 2. Procesar cada cliente
+    // 2. PRIMERO: Calcular facturación total (para verificar umbral)
     let facturacionTotal = 0;
-    let facturacionAcumulada = 0;
+    for (const cliente of clientes) {
+      const precioPlan = Number(cliente.precio_plan) || 0;
+      facturacionTotal += precioPlan;
+    }
+
+    const umbralComision = 4000;
+    const aplica_comisiones = facturacionTotal >= umbralComision;
+
+    console.log(`💰 Facturación Total: Q${facturacionTotal} - ¿Aplica comisiones?: ${aplica_comisiones}`);
+
+    // 3. SEGUNDO: Procesar cada cliente (ahora sabemos si aplica comisión)
     let montoComisonesTotal = 0;
     let montoBonoTotal = 0;
     let montoPenalizacionTotal = 0;
 
     const detallesComisiones: any[] = [];
-    const umbralComision = 4000;
-    let umbralAlcanzado = false;
 
     for (const cliente of clientes) {
       const pagó = cliente.estado_factura === 'Pagadas';
       const precioPlan = Number(cliente.precio_plan) || 0;
-
-      // Sumar a facturación total (todos contribuyen)
-      facturacionTotal += precioPlan;
-      facturacionAcumulada += precioPlan;
-
-      // Verificar si AHORA alcanzamos el umbral (incluyendo este cliente)
-      if (facturacionAcumulada >= umbralComision && !umbralAlcanzado) {
-        umbralAlcanzado = true;
-      }
 
       // Obtener plan de comisión POR PRECIO (rango)
       const plan = await this.obtenerComisionPorPrecio(precioPlan);
@@ -189,20 +208,20 @@ class ComisionService {
 
       const montoComision = Number(plan.monto_comision) || 0;
 
-      // SUMAR COMISIÓN si el umbral ya fue alcanzado (incluye el cliente que lo cruza)
-      if (umbralAlcanzado) {
+      // SUMAR COMISIÓN si aplica (i.e., si facturación >= Q 4,000)
+      if (aplica_comisiones) {
         montoComisonesTotal += montoComision;
       }
 
-      // BONO FIJO POR RANGO (se calculará al final, no por cliente)
-
-      // PENALIZACIÓN: Si el cliente NO pago, se le retiene su comisión según su plan (SIN IMPORTAR EL UMBRAL)
+      // PENALIZACIÓN: Si el cliente NO pago, se le retiene su comisión según su plan
       let penalizacion = 0;
       if (!pagó) {
-        penalizacion = montoComision;
-        montoPenalizacionTotal += penalizacion;
+        penalizacion = aplica_comisiones ? montoComision : 0;
+        if (penalizacion > 0) {
+          montoPenalizacionTotal += penalizacion;
+        }
 
-        // Registrar incumplimiento solo si es MES ACTUAL (abril 2026 en adelante)
+        // Registrar incumplimiento SIEMPRE, sin importar si alcanza umbral
         const mesActual = new Date(mes).getMonth(); // 0-11, abril = 3
         const yearActual = new Date(mes).getFullYear();
         const esAbrilOPosterior = yearActual > 2026 || (yearActual === 2026 && mesActual >= 3);
@@ -214,7 +233,7 @@ class ComisionService {
             cliente.nombre_cliente,
             new Date(cliente.fecha_instalacion),
             precioPlan,
-            montoComision,
+            penalizacion || montoComision, // Usa montoComision aunque no haya penalizacion aplicada aún
             mes
           );
         }
@@ -227,15 +246,15 @@ class ComisionService {
         nombre_plan: cliente.nombre_plan,
         precio_plan: precioPlan,
         porcentaje_comision: plan.porcentaje_comision,
-        monto_comision: umbralAlcanzado ? montoComision : 0,
+        monto_comision: aplica_comisiones ? montoComision : 0,
         monto_bono: 0,  // Bono fijo se asigna al final, no por cliente
         cliente_pago: pagó,
         penalizacion: penalizacion,
       });
     }
 
-    // 3. CALCULAR BONO FIJO según rango de facturación TOTAL del mes
-    if (umbralAlcanzado) {
+    // 4. CALCULAR BONO FIJO según rango de facturación TOTAL del mes
+    if (aplica_comisiones) {
       if (facturacionTotal >= 7001) {
         montoBonoTotal = 1000;
       } else if (facturacionTotal >= 5001) {
@@ -244,7 +263,7 @@ class ComisionService {
         montoBonoTotal = 400;
       }
     }
-    const montoTotalNeto = umbralAlcanzado ? montoComisonesTotal + montoBonoTotal - montoPenalizacionTotal : -montoPenalizacionTotal;
+    const montoTotalNeto = aplica_comisiones ? montoComisonesTotal + montoBonoTotal - montoPenalizacionTotal : 0;
 
     const comisionMes: ComisionMes = {
       id_asesor: idAsesor,
@@ -253,7 +272,7 @@ class ComisionService {
       facturacion_total: facturacionTotal,
       cantidad_clientes: clientes.length,
       monto_total_comisiones: montoComisonesTotal,
-      aplica_comisiones: umbralAlcanzado,
+      aplica_comisiones: aplica_comisiones,
       monto_bono: montoBonoTotal,
       monto_penalizacion: montoPenalizacionTotal,
       monto_total_neto: montoTotalNeto,
@@ -488,6 +507,9 @@ class ComisionService {
         13
       );
 
+      // Formato del mes para el historial: "Abril 2026"
+      const mesHistorial = this.getNombreMes(mes);
+
       // Verificar si ya existe registro para este cliente en este vencimiento
       const checkQuery = `
         SELECT id FROM incumplimientos_clientes
@@ -501,8 +523,8 @@ class ComisionService {
           INSERT INTO incumplimientos_clientes (
             id_servicio, id_asesor, nombre_cliente,
             fecha_instalacion, fecha_vencimiento_pago,
-            precio_plan, comision_retenida, contador_incumplimientos
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, 1)
+            precio_plan, comision_retenida, contador_incumplimientos, meses_sin_pagar
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, $8::jsonb)
         `;
         await db.query(insertQuery, [
           idServicio,
@@ -512,7 +534,33 @@ class ComisionService {
           fechaVencimiento,
           precioPlan,
           comisionRetenida,
+          JSON.stringify([mesHistorial]),
         ]);
+      } else {
+        // Cliente ya existe - verificar si ESTE MES ya fue registrado
+        const checkMesQuery = `
+          SELECT meses_sin_pagar FROM incumplimientos_clientes
+          WHERE id_servicio = $1 AND fecha_vencimiento_pago = $2
+        `;
+        const resultMes = await db.query(checkMesQuery, [idServicio, fechaVencimiento]);
+        const mesesExistentes = resultMes[0]?.meses_sin_pagar || [];
+        
+        // Si el mes NO está en el historial, añadirlo e incrementar contador
+        if (!mesesExistentes.includes(mesHistorial)) {
+          const incrementQuery = `
+            UPDATE incumplimientos_clientes
+            SET 
+              contador_incumplimientos = contador_incumplimientos + 1,
+              meses_sin_pagar = meses_sin_pagar || $3::jsonb
+            WHERE id_servicio = $1 AND fecha_vencimiento_pago = $2
+          `;
+          await db.query(incrementQuery, [
+            idServicio,
+            fechaVencimiento,
+            JSON.stringify([mesHistorial]),
+          ]);
+        }
+        // Si el mes YA está en el historial, no hace nada (idempotente)
       }
 
       // Incrementar contador en servicio_wisphub
@@ -528,7 +576,7 @@ class ComisionService {
   }
 
   /**
-   * Obtener clientes con incumplimientos
+   * Obtener clientes con incumplimientos desde Abril 2026 en adelante (ventana de 6 meses)
    */
   async obtenerClientesIncumplidos(idAsesor?: number): Promise<any[]> {
     let query = `
@@ -536,11 +584,10 @@ class ComisionService {
         id_servicio, id_asesor, nombre_cliente,
         fecha_instalacion, fecha_vencimiento_pago,
         contador_incumplimientos, precio_plan, comision_retenida,
-        created_at
+        meses_sin_pagar, created_at
       FROM incumplimientos_clientes
       WHERE contador_incumplimientos > 0
-      AND EXTRACT(YEAR FROM fecha_vencimiento_pago) = 2026
-      AND EXTRACT(MONTH FROM fecha_vencimiento_pago) = 5
+      AND fecha_vencimiento_pago >= '2026-04-13'
     `;
 
     const params: any[] = [];

@@ -54,27 +54,30 @@ import { AuthService, Usuario } from './core/services/auth.service';
     <mat-sidenav-container *ngIf="usuarioActual" class="sidenav-container">
       <mat-sidenav #sidenav class="sidenav" [mode]="isMobile ? 'over' : 'side'" [opened]="!isMobile">
         <nav class="nav-list">
-          <a class="nav-item" routerLink="/dashboard" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
+          <!-- SOLO VENDEDORES VEN ESTO -->
+          <a *ngIf="usuarioActual.rol === 'vendedor'" class="nav-item" routerLink="/dashboard" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
           </a>
-          <a class="nav-item" routerLink="/comisiones" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
+          <a *ngIf="usuarioActual.rol === 'vendedor'" class="nav-item" routerLink="/comisiones" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">💰</span><span class="nav-label">Mis Comisiones</span>
           </a>
-          <a class="nav-item" routerLink="/historico" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
+          <a *ngIf="usuarioActual.rol === 'vendedor'" class="nav-item" routerLink="/historico" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">📊</span><span class="nav-label">Últimos 5 Meses</span>
           </a>
-          <a class="nav-item" routerLink="/clientes" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
+          <a *ngIf="usuarioActual.rol === 'vendedor'" class="nav-item" routerLink="/clientes" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">👥</span><span class="nav-label">Clientes</span>
           </a>
-          <a class="nav-item" routerLink="/incumplimientos" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
+          <a *ngIf="usuarioActual.rol === 'vendedor'" class="nav-item" routerLink="/incumplimientos" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">⚠️</span><span class="nav-label">Incumplimientos</span>
           </a>
-          <a class="nav-item" routerLink="/clientes-grafica" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
+          <a *ngIf="usuarioActual.rol === 'vendedor'" class="nav-item" routerLink="/clientes-grafica" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">📈</span><span class="nav-label">Clientes por Mes</span>
           </a>
-          <a class="nav-item" routerLink="/bono-variable" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
+          <a *ngIf="usuarioActual.rol === 'vendedor'" class="nav-item" routerLink="/bono-variable" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">🎯</span><span class="nav-label">Bono Variable</span>
           </a>
+
+          <!-- SOLO ADMIN VE ESTO -->
           <a *ngIf="usuarioActual.rol === 'admin'" class="nav-item" routerLink="/vendedores" routerLinkActive="nav-active" (click)="onNavClick(sidenav)">
             <span class="nav-icon">👔</span><span class="nav-label">Vendedores</span>
           </a>
@@ -105,8 +108,8 @@ import { AuthService, Usuario } from './core/services/auth.service';
       </a>
     </div>
 
-    <!-- BOTTOM NAV (móvil) -->
-    <nav class="bottom-nav" *ngIf="usuarioActual && isMobile">
+    <!-- BOTTOM NAV (móvil) - SOLO PARA VENDEDORES -->
+    <nav class="bottom-nav" *ngIf="usuarioActual && isMobile && usuarioActual.rol === 'vendedor'">
       <a class="bnav-item" routerLink="/dashboard" routerLinkActive="bnav-active" (click)="masAbierto=false">
         <span class="bnav-icon">🏠</span><span class="bnav-label">Inicio</span>
       </a>

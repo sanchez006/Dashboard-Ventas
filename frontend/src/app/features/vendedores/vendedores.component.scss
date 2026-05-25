@@ -1,0 +1,254 @@
+// Variables de colores
+$color-success: #2ca02c;
+$color-warning: #ff9800;
+$color-danger: #d62728;
+$color-info: #1f77b4;
+$color-primary: #0288d1;
+
+$gradient-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+$text-primary: #1a3a52;
+$text-secondary: #64748b;
+$text-light: #90a4ae;
+$border-color: #e0e0e0;
+$shadow-light: 0 10px 30px rgba(0, 0, 0, 0.1);
+$shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.15);
+
+.container {
+  padding: 30px 20px;
+  background: $gradient-bg;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 40px;
+  text-align: center;
+
+  h1 {
+    font-size: 2.5em;
+    color: $text-primary;
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 1.1em;
+    color: $text-secondary;
+    margin: 0;
+  }
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 20px;
+
+  p {
+    color: $text-secondary;
+    font-size: 1.1em;
+  }
+}
+
+.vendedores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.vendedor-wrapper {
+  perspective: 1000px;
+}
+
+.vendedor-card {
+  background: white !important;
+  border-radius: 16px !important;
+  box-shadow: $shadow-light !important;
+  padding: 24px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: $shadow-hover !important;
+  }
+
+  // Top accent border con gradiente
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $color-success, $color-danger, $color-primary);
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.4em;
+    color: $text-primary;
+    font-weight: 600;
+    flex: 1;
+  }
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  &-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &-warning {
+    background-color: #fff3e0;
+    color: #f57c00;
+  }
+
+  &-danger {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.stat-item {
+  flex: 1;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #eff2f5;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 0.75em;
+    color: $text-light;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    display: block;
+    font-size: 1.2em;
+    font-weight: 700;
+    color: $text-primary;
+  }
+}
+
+.kpi-rings {
+  width: 100%;
+  height: 240px;
+  margin: 20px 0;
+
+  .center-text {
+    font-size: 24px;
+    font-weight: 700;
+    fill: $text-primary;
+  }
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid $border-color;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateX(4px);
+  }
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    flex: 1;
+    align-items: center;
+  }
+
+  .legend-label {
+    color: $text-secondary;
+    font-weight: 500;
+  }
+
+  .legend-value {
+    color: $text-primary;
+    font-weight: 700;
+    margin-left: auto;
+  }
+}
+
+.color {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+
+  &.bono {
+    background-color: $color-success;
+  }
+
+  &.comision {
+    background-color: $color-danger;
+  }
+
+  &.global {
+    background-color: $color-primary;
+  }
+
+  &:hover {
+    transform: scale(1.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.clientes {
+  color: #666;
+  font-weight: bold;
+}

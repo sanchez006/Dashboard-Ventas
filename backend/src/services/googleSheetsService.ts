@@ -7,6 +7,14 @@ const TAB_PROSPECCION = 'PROSPECCION';
 const TAB_LLAMADAS = 'llamadas de calidad';
 const CREDENTIALS_PATH = path.join(__dirname, '../pagina-ventas-495219-c355e547bef5.json');
 
+// Normalizar teléfono: remover espacios, +502, mantener solo 8 dígitos
+function normalizarTelefono(telefonoRaw: string): string {
+  if (!telefonoRaw) return '';
+  const limpio = telefonoRaw.replace(/\s+/g, '').replace(/^\+502/, '').trim();
+  const soloDigitos = limpio.replace(/\D/g, '');
+  return soloDigitos.slice(-8);
+}
+
 function getAuth() {
   const auth = new google.auth.GoogleAuth({
     keyFile: CREDENTIALS_PATH,
@@ -72,6 +80,7 @@ export async function sincronizarProspectos(): Promise<{ sincronizados: number; 
     const nombreCliente  = fila[1] || '';  // B: NOMBRE CLIENTE
     const mesTexto       = fila[2] || '';  // C: MES (ej: "FEBRERO 2026")
     const asesor         = fila[3] || '';  // D: ASESOR
+    const telefonoRaw    = fila[4] || '';  // E: TELÉFONO
     const direccion      = fila[5] || '';  // F: DIRECCIÓN
 
     if (!nombreCliente || !asesor || !marcaTemporal) continue;
@@ -79,6 +88,9 @@ export async function sincronizarProspectos(): Promise<{ sincronizados: number; 
     // Convertir mes texto a YYYY-MM
     const mes = convertirMesTextoAYYYYMM(mesTexto);
     if (!mes) continue;
+
+    // Normalizar teléfono
+    const telefono = normalizarTelefono(telefonoRaw);
 
     // 🚀 Buscar asesor en mapa
     let idAsesor = usuariosMap.get(asesor.toLowerCase());
@@ -140,10 +152,10 @@ export async function sincronizarProspectos(): Promise<{ sincronizados: number; 
     if (procesadosEnBatch.has(claveDuplicado)) {
       console.log(`[SHEETS] Duplicado en batch: ${nombreCliente} (${asesor})`);
       await db.none(
-        `INSERT INTO prospectos_rechazados (id_asesor, nombre_asesor, nombre_cliente, direccion, mes_referencia, motivo_rechazo)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO prospectos_rechazados (id_asesor, nombre_asesor, nombre_cliente, direccion, telefono, mes_referencia, motivo_rechazo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (id_asesor, nombre_cliente, mes_referencia) DO NOTHING`,
-        [idAsesor, nombreAsesor, nombreCliente, direccion, mes, 'Duplicado - Múltiples registros en mismo batch']
+        [idAsesor, nombreAsesor, nombreCliente, direccion, telefono, mes, 'Duplicado - Múltiples registros en mismo batch']
       );
       rechazados++;
       continue;
@@ -159,10 +171,10 @@ export async function sincronizarProspectos(): Promise<{ sincronizados: number; 
     if (duplicado) {
       console.log(`[SHEETS] Duplicado en BD: ${nombreCliente} (${asesor})`);
       await db.none(
-        `INSERT INTO prospectos_rechazados (id_asesor, nombre_asesor, nombre_cliente, direccion, mes_referencia, motivo_rechazo)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO prospectos_rechazados (id_asesor, nombre_asesor, nombre_cliente, direccion, telefono, mes_referencia, motivo_rechazo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (id_asesor, nombre_cliente, mes_referencia) DO NOTHING`,
-        [idAsesor, nombreAsesor, nombreCliente, direccion, mes, 'Duplicado - Cliente ya registrado']
+        [idAsesor, nombreAsesor, nombreCliente, direccion, telefono, mes, 'Duplicado - Cliente ya registrado']
       );
       rechazados++;
       continue;
@@ -173,10 +185,10 @@ export async function sincronizarProspectos(): Promise<{ sincronizados: number; 
 
     // ✅ INSERTAR en prospectos
     await db.none(
-      `INSERT INTO prospectos (id_asesor, nombre_asesor, nombre_cliente, direccion, fecha_registro, mes, fuente)
-       VALUES ($1, $2, $3, $4, $5, $6, 'sheets')
+      `INSERT INTO prospectos (id_asesor, nombre_asesor, nombre_cliente, direccion, telefono, fecha_registro, mes, fuente)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'sheets')
        ON CONFLICT (id_asesor, nombre_cliente, mes) DO NOTHING`,
-      [idAsesor, nombreAsesor, nombreCliente, direccion, fecha, mes]
+      [idAsesor, nombreAsesor, nombreCliente, direccion, telefono, fecha, mes]
     );
     count++;
   }

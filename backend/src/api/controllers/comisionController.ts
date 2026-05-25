@@ -82,6 +82,69 @@ export const obtenerComisiones = async (req: Request, res: Response) => {
   }
 };
 
+export const obtenerComisionesAdmin = async (req: Request, res: Response) => {
+  try {
+    const { idAsesor, mes } = req.params;
+
+    if (!idAsesor) {
+      return res.status(400).json({
+        error: 'idAsesor es requerido',
+      });
+    }
+
+    // Convertir mes de formato YYYY-MM a Date
+    let mesDate: Date | undefined;
+    if (mes && /^\d{4}-\d{2}$/.test(mes)) {
+      const [year, month] = mes.split('-').map(Number);
+      mesDate = new Date(year, month - 1, 1);
+    }
+
+    const idAsesorNum = parseInt(idAsesor as string);
+    
+    console.log(`🔍 [ADMIN] Buscando comisiones para vendedor ${idAsesorNum}, mes: ${mes}`);
+    
+    let comisiones = await comisionService.obtenerComisiones(
+      idAsesorNum,
+      mesDate
+    );
+
+    console.log(`📊 Comisiones encontradas en BD: ${comisiones.length}`);
+
+    // Si no hay datos O si hay datos pero con 0 clientes (datos vacíos), calcular sobre la marcha
+    if (!comisiones || comisiones.length === 0 || (comisiones.length > 0 && comisiones[0].cantidad_clientes === 0)) {
+      console.log(`⚙️ Recalculando comisiones en tiempo real...`);
+      
+      // Obtener nombre del vendedor
+      const vendedorResult = await db.query(
+        `SELECT nombre FROM usuarios WHERE id_asesor = $1`,
+        [idAsesorNum]
+      );
+      const nombreVendedor = vendedorResult[0]?.nombre || `Vendedor ${idAsesorNum}`;
+
+      console.log(`👤 Calculando para: ${nombreVendedor}`);
+
+      // Calcular las comisiones
+      const comisionCalculada = await comisionService.calcularComisiones(
+        idAsesorNum,
+        nombreVendedor,
+        mesDate || new Date()
+      );
+
+      console.log(`✅ Comisión recalculada:`, comisionCalculada);
+      comisiones = [comisionCalculada];
+    }
+
+    res.json({
+      success: true,
+      data: comisiones,
+      total: comisiones.length,
+    });
+  } catch (error) {
+    console.error('❌ Error en obtenerComisionesAdmin:', error);
+    res.status(500).json({ error: 'Error obteniendo comisiones' });
+  }
+};
+
 export const obtenerDetallesComision = async (
   req: Request,
   res: Response
@@ -360,6 +423,7 @@ export const obtenerClientesIncumplidos = async (
       idAsesorFinal: idAsesorFinal
     });
 
+    // Requiere id_asesor
     if (!idAsesorFinal) {
       return res.status(400).json({
         error: 'id_asesor no disponible',
@@ -383,5 +447,50 @@ export const obtenerClientesIncumplidos = async (
   } catch (error) {
     console.error('Error obteniendo incumplimientos:', error);
     res.status(500).json({ error: 'Error obteniendo clientes incumplidos' });
+  }
+};
+
+export const testCalcularAbril = async (req: Request, res: Response) => {
+  try {
+    console.log('TEST: Calculando mes anterior...');
+    // Siempre calcular mes anterior, NUNCA el mes actual
+    const ahora = new Date();
+    const mesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+    console.log(`Mes a calcular: ${mesAnterior.toLocaleDateString()}`);
+    
+    const vendedoresResult = await db.query(
+      `SELECT id_asesor, nombre FROM usuarios WHERE rol = 'vendedor' AND activo = true AND id_asesor IS NOT NULL`
+    );
+    let exitosos = 0, fallidos = 0;
+    const resultados: any[] = [];
+    for (const vendedor of vendedoresResult) {
+      try {
+        const comision = await comisionService.calcularComisiones(
+          vendedor.id_asesor,
+          vendedor.nombre,
+          mesAnterior
+        );
+        resultados.push({
+          vendedor: vendedor.nombre,
+          clientes: comision.cantidad_clientes,
+          facturacion: comision.facturacion_total
+        });
+        exitosos++;
+      } catch (err) {
+        console.error(`Error ${vendedor.nombre}:`, err);
+        fallidos++;
+      }
+    }
+    res.json({
+      success: true,
+      mensaje: 'Test completado (mes anterior)',
+      mesCalculado: mesAnterior.toLocaleDateString(),
+      exitosos,
+      fallidos,
+      vendedores: resultados
+    });
+  } catch (error) {
+    console.error('Error en test:', error);
+    res.status(500).json({ error: 'Error en test' });
   }
 };

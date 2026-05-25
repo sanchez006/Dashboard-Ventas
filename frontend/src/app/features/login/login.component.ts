@@ -47,10 +47,16 @@ export class LoginComponent implements OnInit {
   }
   //se ejecuta cuando el componente se inicializa. Aquí se verifica si el usuario ya está logueado (por ejemplo, si hay un token válido en localStorage). 
   ngOnInit(): void {
-    // Si ya está logueado, ir al dashboard
-    if (this.authService.estaLogueado()) {  //verifica si el usuario ya tiene un token válido, lo que indicaría que ya está logueado. Esto es útil para evitar que el usuario tenga que ingresar sus credenciales denuevo
-      console.log('Ya estaba logueado, ir a comisiones');
-      this.router.navigate(['/comisiones']);// si el usuario ya está logueado, lo redirige automáticamente a la página de comisiones.
+    // Si ya está logueado, ir según el rol
+    if (this.authService.estaLogueado()) {
+      const usuario = this.authService.getUsuario();
+      if (usuario?.rol === 'admin') {
+        console.log('Admin ya logueado, ir a vendedores');
+        this.router.navigate(['/vendedores']);
+      } else {
+        console.log('Vendedor ya logueado, ir a dashboard');
+        this.router.navigate(['/dashboard']);
+      }
       return;
     }
 
@@ -85,7 +91,7 @@ export class LoginComponent implements OnInit {
         
         // Ir al dashboard según rol
         if (response.usuario.rol === 'admin') {
-          this.router.navigate(['/admin']);
+          this.router.navigate(['/vendedores']);
         } else {
           this.router.navigate(['/dashboard']);
         }

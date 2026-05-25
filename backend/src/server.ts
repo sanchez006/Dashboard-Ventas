@@ -10,8 +10,10 @@ import kpisRoutes from './api/routes/kpis.routes';
 import comisionesRoutes from './api/routes/comisiones.routes';
 import authRoutes from './api/routes/auth.routes';
 import bonoRoutes from './api/routes/bono.routes';
+import adminRoutes from './api/routes/admin.routes';
 import cron from 'node-cron';
 import { sincronizarTodo } from './services/googleSheetsService';
+import { calcularComisionesAutomatico } from './api/controllers/cron-function';
 // import vendedoresRoutes from './api/routes/vendedores.routes'; // Desactivado por ahora
 
 dotenv.config(); // lee el archivo .env y carga sus valores en el sistema ejemplo: DB_HOST, DB_USER, DB_PASSWORD, PORT, etc.
@@ -40,6 +42,7 @@ app.use('/api/clientes', clientesRoutes);
 app.use('/api/kpis', kpisRoutes);
 app.use('/api/comisiones', comisionesRoutes);
 app.use('/api/bono', bonoRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Endpoint para sincronización manual desde el frontend
 app.post('/api/bono/sincronizar', async (req, res) => {
@@ -59,6 +62,11 @@ cron.schedule('0 * * * *', async () => {
   } catch (error) {
     console.error('Error en cron de sincronización:', error);
   }
+});
+// Cron job: calcular comisiones cada 13 a las 6pm (18:00)
+cron.schedule('0 18 13 * *', async () => {
+  console.log('\n=== CRON: Ejecutando calculo de comisiones ===');
+  await calcularComisionesAutomatico();
 });
 // app.use('/api/vendedores', vendedoresRoutes); // Desactivado: tabla vendedores no existe aún
 

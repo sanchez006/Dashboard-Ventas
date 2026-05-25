@@ -50,6 +50,7 @@
             <tr>
               <th>Cliente</th>
               <th>Veces sin Pagar</th>
+              <th>Meses Sin Pagar</th>
               <th>Precio del Plan</th>
               <th>Comisión Retenida</th>
               <th>Vencimiento de Pago</th>
@@ -60,6 +61,11 @@
               <td class="cell-cliente">{{ inc.nombre_cliente }}</td>
               <td class="cell-contador">
                 <span class="contador-badge">{{ inc.contador_incumplimientos }}</span>
+              </td>
+              <td class="cell-meses">
+                <div class="meses-container">
+                  <span class="mes-badge" *ngFor="let mes of inc.meses_sin_pagar">{{ mes }}</span>
+                </div>
               </td>
               <td class="cell-precio">Q {{ parseFloat(inc.precio_plan).toFixed(2) }}</td>
               <td class="cell-comision">-Q {{ parseFloat(inc.comision_retenida).toFixed(2) }}</td>

@@ -3,6 +3,7 @@ import {
   calcularComisionesVendedor,
   calcularComisionesMes,
   obtenerComisiones,
+  obtenerComisionesAdmin,
   obtenerDetallesComision,
   obtenerResumen5Meses,
   obtenerTopVendedores,
@@ -13,6 +14,7 @@ import {
   recalcularAbril2026,
   recalcularMes,
   obtenerClientesIncumplidos,
+  testCalcularAbril,
 } from '../controllers/comisionController';
 import { verificarToken } from '../middleware/authMiddleware';
 
@@ -88,13 +90,26 @@ router.get('/mi-resumen/5-meses', verificarToken, obtenerMiResumen5Meses);
  */
 router.post('/admin/recalcular/:mes', recalcularMes);
 
+/**
+ * GET /api/comisiones/admin/:idAsesor/:mes
+ * ADMIN: Obtener comisiones de un vendedor específico (sin restricción de autenticación personal)
+ */
+router.get('/admin/:idAsesor/:mes', obtenerComisionesAdmin);
+
 /** @deprecated — usar /admin/recalcular/2026-04 */
 router.post('/admin/recalcular-abril-2026', recalcularAbril2026);
 
 /**
- * GET /api/comisiones/incumplimientos?idAsesor=1
- * Obtener clientes con incumplimientos (opcionalmente por vendedor)
+ * GET /api/comisiones/incumplimientos/lista
+ * Obtener clientes con incumplimientos del asesor autenticado
+ * Requiere autenticacion
  */
-router.get('/incumplimientos/lista', obtenerClientesIncumplidos);
+router.get('/incumplimientos/lista', verificarToken, obtenerClientesIncumplidos);
+
+/**
+ * POST /api/comisiones/test/abril
+ * TESTING: Calcula SOLO ABRIL para probar
+ */
+router.post('/test/abril', testCalcularAbril);
 
 export default router;
