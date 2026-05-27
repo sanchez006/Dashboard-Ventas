@@ -1,0 +1,78 @@
+<h2 mat-dialog-title>Detalle de {{ data.vendedor?.nombre }}</h2>
+<mat-tab-group>
+  <mat-tab label="Llamadas de Calidad">
+    <!-- Aquí va la tabla de llamadas de calidad -->
+    <div *ngIf="data.llamadas && data.llamadas.length; else noLlamadas">
+      <table class="tabla-detalle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre Cliente</th>
+            <th>Fecha Llamada</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let llamada of data.llamadas; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ llamada.nombre_cliente }}</td>
+            <td>{{ llamada.fecha_llamada | date:'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noLlamadas>
+      <p>No hay llamadas de calidad registradas.</p>
+    </ng-template>
+  </mat-tab>
+  <mat-tab label="Prospectos">
+    <!-- Aquí va la tabla de prospectos -->
+    <div *ngIf="data.prospectos && data.prospectos.length; else noProspectos">
+      <table class="tabla-detalle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre Prospecto</th>
+            <th>Fecha Registro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let prospecto of data.prospectos; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ prospecto.nombre }}</td>
+            <td>{{ prospecto.fecha_registro | date:'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noProspectos>
+      <p>No hay prospectos registrados.</p>
+    </ng-template>
+  </mat-tab>
+  <mat-tab label="Incumplimientos">
+    <!-- Aquí va la tabla de incumplimientos -->
+    <div *ngIf="data.incumplimientos && data.incumplimientos.length; else noIncumplimientos">
+      <table class="tabla-detalle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Meses sin pagar</th>
+            <th>Comisión retenida</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inc of data.incumplimientos; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ inc.nombre_cliente }}</td>
+            <td>{{ inc.meses_sin_pagar?.join(', ') }}</td>
+            <td>{{ inc.comision_retenida }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noIncumplimientos>
+      <p>No hay incumplimientos registrados.</p>
+    </ng-template>
+  </mat-tab>
+</mat-tab-group>
+<button mat-button mat-dialog-close>Cerrar</button>

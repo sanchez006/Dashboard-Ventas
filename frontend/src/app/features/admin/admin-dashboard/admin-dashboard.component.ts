@@ -1,8 +1,14 @@
+  testClick() {
+    alert('¡Click en tarjeta!');
+  }
 import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { VendedorDetalleDialogComponent } from '../vendedor-detalle-dialog.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule } from '@angular/material/dialog';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -14,7 +20,9 @@ import { ApiService } from '../../../core/services/api.service';
     CommonModule,
     FormsModule,
     MatCardModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatDialogModule,
+    VendedorDetalleDialogComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.scss']
@@ -34,8 +42,29 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private authService: AuthService,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private dialog: MatDialog
   ) {}
+  async abrirDetalleVendedor(vendedor: any) {
+    console.log('CLICK', vendedor);
+    const [llamadas, prospectos, incumplimientos] = await Promise.all([
+      this.apiService.getLlamadas(vendedor.id_asesor, this.mesSeleccionado).toPromise().then(r => r.data || []),
+      this.apiService.getProspectos(vendedor.id_asesor, this.mesSeleccionado).toPromise().then(r => r.data || []),
+      this.apiService.obtenerIncumplimientos().toPromise().then(r => (r.data || []).filter((i: any) => i.id_asesor === vendedor.id_asesor))
+    ]);
+    console.log('Abriendo modal...', { vendedor, llamadas, prospectos, incumplimientos });
+    const ref = this.dialog.open(VendedorDetalleDialogComponent, {
+      width: '90vw',
+      height: '90vh',
+      data: {
+        vendedor,
+        llamadas,
+        prospectos,
+        incumplimientos
+      }
+    });
+    console.log('Modal abierto', ref);
+  }
 
   ngOnInit(): void {
     console.log('Admin Dashboard inicializando...');

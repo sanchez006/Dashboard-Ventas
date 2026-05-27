@@ -1,0 +1,19 @@
+.tabla-detalle {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.tabla-detalle th, .tabla-detalle td {
+  border: 1px solid #e0e0e0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.tabla-detalle th {
+  background: #f5f5f5;
+}
+.tabla-detalle tr:nth-child(even) {
+  background: #fafafa;
+}
+mat-tab-group {
+  margin-bottom: 1rem;
+}
