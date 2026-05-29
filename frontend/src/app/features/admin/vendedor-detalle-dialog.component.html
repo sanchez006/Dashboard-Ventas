@@ -1,8 +1,23 @@
 <h2 mat-dialog-title>Detalle de {{ data.vendedor?.nombre }}</h2>
 <mat-tab-group>
   <mat-tab label="Llamadas de Calidad">
-    <!-- Aquí va la tabla de llamadas de calidad -->
-    <div *ngIf="data.llamadas && data.llamadas.length; else noLlamadas">
+    <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 8px;">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="30" fill="none" stroke="#e0e0e0" stroke-width="7" />
+          <circle cx="35" cy="35" r="30" fill="none" [attr.stroke]="porcentajeLlamadas >= 100 ? '#388e3c' : '#1976d2'" stroke-width="7"
+            [attr.stroke-dasharray]="(2 * 3.1416 * 30 * porcentajeLlamadas / 100) + ' ' + (2 * 3.1416 * 30)"
+            stroke-dashoffset="0" stroke-linecap="round" />
+          <text x="35" y="40" text-anchor="middle" font-size="18" font-weight="bold">{{ porcentajeLlamadas }}%</text>
+        </svg>
+        <span style="font-size: 12px; color: #555;">Meta: {{ metaLlamadas }} llamadas</span>
+      </div>
+      <div>
+        <label for="mesLlamadas"><b>Mes:</b></label>
+        <input id="mesLlamadas" type="month" [value]="mesLlamadas" (change)="onMesLlamadasChange($event)" style="font-size: 1rem; padding: 2px 6px;">
+      </div>
+    </div>
+    <div *ngIf="llamadas && llamadas.length; else noLlamadas">
       <table class="tabla-detalle">
         <thead>
           <tr>
@@ -12,7 +27,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let llamada of data.llamadas; let i = index">
+          <tr *ngFor="let llamada of llamadas; let i = index">
             <td>{{ i + 1 }}</td>
             <td>{{ llamada.nombre_cliente }}</td>
             <td>{{ llamada.fecha_llamada | date:'dd/MM/yyyy' }}</td>
@@ -25,8 +40,23 @@
     </ng-template>
   </mat-tab>
   <mat-tab label="Prospectos">
-    <!-- Aquí va la tabla de prospectos -->
-    <div *ngIf="data.prospectos && data.prospectos.length; else noProspectos">
+    <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 8px;">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="30" fill="none" stroke="#e0e0e0" stroke-width="7" />
+          <circle cx="35" cy="35" r="30" fill="none" [attr.stroke]="porcentajeProspectos >= 100 ? '#388e3c' : '#d32f2f'" stroke-width="7"
+            [attr.stroke-dasharray]="(2 * 3.1416 * 30 * porcentajeProspectos / 100) + ' ' + (2 * 3.1416 * 30)"
+            stroke-dashoffset="0" stroke-linecap="round" />
+          <text x="35" y="40" text-anchor="middle" font-size="18" font-weight="bold">{{ porcentajeProspectos }}%</text>
+        </svg>
+        <span style="font-size: 12px; color: #555;">Meta: 100 prospectos</span>
+      </div>
+      <div>
+        <label for="mesProspectos"><b>Mes:</b></label>
+        <input id="mesProspectos" type="month" [value]="mesProspectos" (change)="onMesProspectosChange($event)" style="font-size: 1rem; padding: 2px 6px;">
+      </div>
+    </div>
+    <div *ngIf="prospectos && prospectos.length; else noProspectos">
       <table class="tabla-detalle">
         <thead>
           <tr>
@@ -36,10 +66,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let prospecto of data.prospectos; let i = index">
+          <tr *ngFor="let prospecto of prospectos; let i = index">
             <td>{{ i + 1 }}</td>
-            <td>{{ prospecto.nombre }}</td>
-            <td>{{ prospecto.fecha_registro | date:'dd/MM/yyyy' }}</td>
+            <td>{{ prospecto.nombre_cliente || prospecto.nombre }}</td>
+            <td>
+              {{ prospecto.fecha_registro ? (prospecto.fecha_registro | date:'dd/MM/yyyy') : '' }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -49,8 +81,11 @@
     </ng-template>
   </mat-tab>
   <mat-tab label="Incumplimientos">
-    <!-- Aquí va la tabla de incumplimientos -->
-    <div *ngIf="data.incumplimientos && data.incumplimientos.length; else noIncumplimientos">
+    <div style="margin-bottom: 8px;">
+      <label for="mesIncumplimientos"><b>Mes:</b></label>
+      <input id="mesIncumplimientos" type="month" [value]="mesIncumplimientos" (change)="onMesIncumplimientosChange($event)" style="font-size: 1rem; padding: 2px 6px;">
+    </div>
+    <div *ngIf="incumplimientos && incumplimientos.length; else noIncumplimientos">
       <table class="tabla-detalle">
         <thead>
           <tr>
@@ -61,7 +96,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let inc of data.incumplimientos; let i = index">
+          <tr *ngFor="let inc of incumplimientos; let i = index">
             <td>{{ i + 1 }}</td>
             <td>{{ inc.nombre_cliente }}</td>
             <td>{{ inc.meses_sin_pagar?.join(', ') }}</td>

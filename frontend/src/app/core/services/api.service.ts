@@ -104,8 +104,10 @@ export class ApiService {
   }
 
   // Comisiones - Incumplimientos
-  obtenerIncumplimientos(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/comisiones/incumplimientos/lista`);
+  obtenerIncumplimientos(idAsesor?: number): Observable<any> {
+    let url = `${this.apiUrl}/comisiones/incumplimientos/lista`;
+    if (idAsesor) url += `?idAsesor=${idAsesor}`;
+    return this.http.get<any>(url);
   }
 
   // Health check

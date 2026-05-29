@@ -2,115 +2,57 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-vendedores',
   standalone: true,
   imports: [CommonModule, MatCardModule, MatProgressSpinnerModule],
-  template: `
-    <div class="container">
-      <div class="header">
-        <h1>Desempeño de Vendedores</h1>
-        <p class="subtitle">...</p>
-      </div>
-
-      <div *ngIf="cargando" class="loading">
-        <mat-spinner></mat-spinner>
-        <p>Cargando datos de vendedores...</p>
-      </div>
-
-      <div *ngIf="!cargando" class="vendedores-grid">
-        <div *ngFor="let vendedor of vendedores" class="vendedor-wrapper">
-          <mat-card class="vendedor-card">
-            <div class="card-header">
-              <h2>{{ vendedor.nombre }}</h2>
-              <span class="badge" [ngClass]="'badge-' + (vendedor.porcentajeGlobal >= 40 ? 'success' : vendedor.porcentajeGlobal >= 30 ? 'warning' : 'danger')">
-                {{ vendedor.porcentajeGlobal }}%
-              </span>
-            </div>
-
-            <div class="stats-row">
-              <div class="stat-item">
-                <span class="stat-label">Clientes</span>
-                <span class="stat-value">{{ vendedor.clientes }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Facturación</span>
-                <span class="stat-value">Q{{ (vendedor.facturacion | number:'1.2-2') }}</span>
-              </div>
-            </div>
-
-            <!-- SVG CON 3 CAPAS CONCÉNTRICAS -->
-            <svg viewBox="0 0 200 200" class="kpi-rings">
-              <!-- CAPA 3: GLOBAL (90px) - Azul -->
-              <circle cx="100" cy="100" r="90" fill="none" stroke="#e0f2f7" stroke-width="2"></circle>
-              <circle cx="100" cy="100" r="90" fill="none" stroke="#0288d1" stroke-width="12" 
-                      [style.stroke-dasharray]="calcularDasharray(vendedor.porcentajeGlobal, 90)" 
-                      stroke-dashoffset="0" stroke-linecap="round"></circle>
-
-              <!-- CAPA 2: META COMISIÓN (65px) - Rojo -->
-              <circle cx="100" cy="100" r="65" fill="none" stroke="#ffebee" stroke-width="2"></circle>
-              <circle cx="100" cy="100" r="65" fill="none" stroke="#e53935" stroke-width="12" 
-                      [style.stroke-dasharray]="calcularDasharray(vendedor.porcentajePonderado, 65)" 
-                      stroke-dashoffset="0" stroke-linecap="round"></circle>
-
-              <!-- CAPA 1: BONO VARIABLE (40px) - Verde -->
-              <circle cx="100" cy="100" r="40" fill="none" stroke="#e8f5e9" stroke-width="2"></circle>
-              <circle cx="100" cy="100" r="40" fill="none" stroke="#43a047" stroke-width="12" 
-                      [style.stroke-dasharray]="calcularDasharray(vendedor.porcentajeBono, 40)" 
-                      stroke-dashoffset="0" stroke-linecap="round"></circle>
-              
-              <!-- Centro con porcentaje global -->
-              <circle cx="100" cy="100" r="30" fill="#f5f5f5" opacity="0.9"></circle>
-              <text x="100" y="105" text-anchor="middle" class="center-text">{{ vendedor.porcentajeGlobal }}%</text>
-            </svg>
-
-            <!-- LEYENDA -->
-            <div class="legend">
-              <div class="legend-item">
-                <span class="color bono"></span>
-                <div>
-                  <span class="legend-label">Bono Variable</span>
-                  <span class="legend-value">{{ vendedor.porcentajeBono }}%</span>
-                </div>
-              </div>
-              <div class="legend-item">
-                <span class="color comision"></span>
-                <div>
-                  <span class="legend-label">Meta Comisión</span>
-                  <span class="legend-value">{{ vendedor.porcentajePonderado }}%</span>
-                </div>
-              </div>
-              <div class="legend-item">
-                <span class="color global"></span>
-                <div>
-                  <span class="legend-label">Global</span>
-                  <span class="legend-value">{{ vendedor.porcentajeGlobal }}%</span>
-                </div>
-              </div>
-            </div>
-          </mat-card>
-        </div>
-      </div>
-    </div>
-  `,
+  templateUrl: './vendedores.component.html',
   styleUrls: ['./vendedores.component.scss']
 })
 export class VendedoresComponent implements OnInit {
+  esAdmin = false;
+
+  constructor(
+    private http: HttpClient,
+    private apiService: ApiService,
+    private dialog: MatDialog,
+    private authService: AuthService
+  ) {}
+
+  async verDetalleVendedor(vendedor: any) {
+    // Obtener datos adicionales (llamadas, prospectos, incumplimientos)
+    const [llamadas, prospectos, incumplimientos] = await Promise.all([
+      this.apiService.getLlamadas?.(vendedor.id_asesor, this.mesActual)?.toPromise?.().then((r: any) => r?.data || []) ?? [],
+      this.apiService.getProspectos?.(vendedor.id_asesor, this.mesActual)?.toPromise?.().then((r: any) => r?.data || []) ?? [],
+      this.apiService.obtenerIncumplimientos?.(vendedor.id_asesor)?.toPromise?.().then((r: any) => r?.data || []) ?? []
+    ]);
+    this.dialog.open(
+      (await import('../admin/vendedor-detalle-dialog.component')).VendedorDetalleDialogComponent,
+      {
+        width: '90vw',
+        height: '90vh',
+        data: {
+          vendedor,
+          llamadas,
+          prospectos,
+          incumplimientos
+        }
+      }
+    );
+  }
   vendedores: any[] = [];
   cargando = true;
   mesActual = new Date().toISOString().slice(0, 7);
   apiUrl = environment.apiUrl;
 
-  constructor(
-    private http: HttpClient,
-    private apiService: ApiService
-  ) {}
-
   ngOnInit(): void {
+    this.esAdmin = this.authService.esAdmin();
     this.cargarVendedores();
   }
 

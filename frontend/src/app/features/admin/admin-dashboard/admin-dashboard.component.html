@@ -6,7 +6,7 @@
   </div>
   <div *ngIf="!cargando">
     <div class="vendedores-grid">
-      <mat-card *ngFor="let vendedor of vendedores" class="vendedor-card" (click)="testClick()">
+      <mat-card *ngFor="let vendedor of vendedores" class="vendedor-card">
         <div class="card-header">
           <h2>{{ vendedor.nombre }}</h2>
           <span class="badge">{{ vendedor.porcentajeGlobal }}%</span>
@@ -20,6 +20,12 @@
             <span class="stat-label">Facturación</span>
             <span class="stat-value">{{ formatearMoneda(vendedor.facturacion_total) }}</span>
           </div>
+        </div>
+        <div class="actions-row" style="margin-top: 12px; text-align: right;">
+          <button mat-stroked-button color="primary" (click)="abrirDetalleVendedor(vendedor); $event.stopPropagation();" 
+            style="background: yellow !important; color: red !important; font-size: 18px; border: 2px solid red;">
+            ¡VER DETALLE PRUEBA!
+          </button>
         </div>
       </mat-card>
     </div>

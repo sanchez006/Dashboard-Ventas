@@ -1,4 +1,10 @@
 .tabla-detalle {
+  color: #222 !important;
+}
+.tabla-detalle th, .tabla-detalle td {
+  color: #222 !important;
+}
+.tabla-detalle {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1rem;
