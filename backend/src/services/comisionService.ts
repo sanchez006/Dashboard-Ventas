@@ -221,12 +221,19 @@ class ComisionService {
           montoPenalizacionTotal += penalizacion;
         }
 
-        // Registrar incumplimiento SIEMPRE, sin importar si alcanza umbral
+        // Registrar incumplimiento SOLO si el mes es anterior al actual
+        const hoy = new Date();
+        const primerDiaMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        const primerDiaMesCalculo = new Date(mes.getFullYear(), mes.getMonth(), 1);
         const mesActual = new Date(mes).getMonth(); // 0-11, abril = 3
         const yearActual = new Date(mes).getFullYear();
         const esAbrilOPosterior = yearActual > 2026 || (yearActual === 2026 && mesActual >= 3);
 
-        if (esAbrilOPosterior && cliente.fecha_instalacion) {
+        if (
+          esAbrilOPosterior &&
+          cliente.fecha_instalacion &&
+          primerDiaMesCalculo < primerDiaMesActual // Solo meses pasados
+        ) {
           await this.registrarIncumplimiento(
             cliente.id_servicio,
             idAsesor,

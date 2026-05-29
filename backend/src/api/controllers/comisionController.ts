@@ -16,6 +16,14 @@ export const calcularComisionesVendedor = async (
     }
 
     const mesDate = new Date(mes);
+    // Validar que el mes no sea el actual ni futuro
+    const ahora = new Date();
+    const primerDiaMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    if (mesDate >= primerDiaMesActual) {
+      return res.status(400).json({
+        error: 'No se puede calcular comisiones del mes actual ni futuro. Solo meses pasados.'
+      });
+    }
     const comisiones = await comisionService.calcularComisiones(
       idAsesor,
       req.body.nombreAsesor || 'Vendedor',
@@ -43,6 +51,14 @@ export const calcularComisionesMes = async (req: Request, res: Response) => {
     }
 
     const mesDate = new Date(mes);
+    // Validar que el mes no sea el actual ni futuro
+    const ahora = new Date();
+    const primerDiaMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    if (mesDate >= primerDiaMesActual) {
+      return res.status(400).json({
+        error: 'No se puede calcular comisiones del mes actual ni futuro. Solo meses pasados.'
+      });
+    }
     const comisiones = await comisionService.calcularComisionesMes(mesDate);
 
     res.json({

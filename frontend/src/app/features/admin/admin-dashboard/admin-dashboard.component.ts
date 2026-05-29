@@ -33,7 +33,19 @@ export class AdminDashboardComponent implements OnInit {
 
   // Vendedores con sus métricas
   vendedores: any[] = [];
-  mesSeleccionado: string = new Date().toISOString().slice(0, 7);
+  mesSeleccionado: string;
+
+  constructor(
+    private adminService: AdminService,
+    private authService: AuthService,
+    private apiService: ApiService,
+    private dialog: MatDialog
+  ) {
+    // Inicializar con el mes anterior
+    const hoy = new Date();
+    const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    this.mesSeleccionado = mesAnterior.toISOString().slice(0, 7);
+  }
 
   // Para usar Math en el template
   Math = Math;
